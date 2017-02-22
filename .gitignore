@@ -1,5 +1,6 @@
 # Custom
 config.py
+test.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -90,3 +91,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+.idea/
+sample_alert.json
+contrib

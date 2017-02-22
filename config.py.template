@@ -1,0 +1,11 @@
+Zerofox = {
+  'proxies':{
+      'http': '',
+      'https': ''
+  },
+    'url':'',
+    'key':'',
+    'username':'',
+    'password':''
+
+}
