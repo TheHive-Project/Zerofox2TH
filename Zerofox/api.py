@@ -6,6 +6,7 @@ from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 import requests
 import json
+import sys
 
 class ZeroFoxApi():
 
@@ -35,7 +36,10 @@ class ZeroFoxApi():
         req = self.url + "/api-token-auth/"
         data = {'username': self.username,
                 'password': self.password}
-        return self.session.post(req, data=data, proxies=self.proxies, verify=self.verify)
+        try:
+            return self.session.post(req, data=data, proxies=self.proxies, verify=self.verify)
+        except requests.exceptions.RequestException as e:
+            sys.exit("Error: {}".format(e))
 
 
     def getOpenAlerts(self):
@@ -49,8 +53,12 @@ class ZeroFoxApi():
             "sort_field": "severity",
             "sort_direction": "desc"}
         req = self.url + "/alerts/"
-        return self.session.get(req, headers={'Authorization':'token {}'.format(self.key)},
+
+        try:
+            return self.session.get(req, headers={'Authorization':'token {}'.format(self.key)},
                                     params=param, proxies=self.proxies, verify=self.verify)
+        except requests.exceptions.RequestException as e:
+            sys.exit("Error: {}".format(e))
 
 
     def getAlertId(self, id):
@@ -59,5 +67,9 @@ class ZeroFoxApi():
             Get Alert by Id
         """
         req = self.url + "/alerts/{}/".format(id)
-        return self.session.get(req, headers={'Authorization': 'token {}'.format(self.key)}, proxies=self.proxies,
+
+        try:
+            return self.session.get(req, headers={'Authorization': 'token {}'.format(self.key)}, proxies=self.proxies,
                                 verify=self.verify)
+        except requests.exceptions.RequestException as e:
+            sys.exit("Error: {}".format(e))
