@@ -12,34 +12,76 @@ import json
 import getpass
 
 from Zerofox.api import ZeroFoxApi
-from config import Zerofox
+from config import Zerofox, TheHive
+from theHive4py.api import TheHiveApi
+from theHive4py.models import Case,CaseTask,CaseTaskLog
+from zf2markdown import zf2markdown
 
 
 
 
 
 
-
-
-def addTags(tags, **content):
+def addTags(tags, content):
 
     """
         add tag to tags
 
         :param tags is list
-        :param content is text
+        :param content is list
     """
+
     for newtag in content:
-        tags.appen("ZF:{}".format(newtag))
+        tags.append("ZF:{}".format(newtag))
     return tags
 
-def thsummary(comtent):
+def thCaseDescription(c):
 
     """
         Build Case summary
 
-        :param is dict
+        :param is dict content(alert)
     """
+
+    description = "**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}".format(
+                        c.get('alert_type'),
+                        c.get('timestamp'),
+                        c.get('entity').get('name'),
+                        c.get('network'),
+                        c.get('rule_name'),
+                        c.get('offending_content_url')
+
+                    )
+
+    return description
+
+
+
+def thTitle(content):
+    return "[Zerofox] #{0} - {1} in {2} for entity: {3}".format(
+        content.get("id", "-"),
+        content.get("alert_type","-"),
+        content.get("network", "-"),
+        content.get("entity",{}).get("name","-")
+        )
+
+def thSeverity(sev):
+
+    """
+        convert DigitalShadows severity in TH severity
+
+        :sev string
+    """
+
+    severities = {
+        'NONE':1,
+        1:1,
+        2:1,
+        3:2,
+        4:3
+    }
+    return severities[sev]
+
 
 def convertDs2ThCase(content):
 
@@ -48,32 +90,57 @@ def convertDs2ThCase(content):
 
         :content dict object
     """
+    if content.get('alert'):
+        c = content.get('alert')
+    else:
+        return "Can't open alert"
+        sys.exit(1)
 
     tasks = []
     tags = ["src:ZeroFOX"]
-    tags = addTags(tags,
-        content["alert"]["alert_type"],
-        content["alert"]["entity"]["perpetrator"]["network"],
-        content["alert"]["entity"]["name"],
-        )
+    tags = addTags(tags,[
+        c.get("alert_type"),
+        c.get("network"),
+        c.get("entity",{}).get("name","-"),
+        "id={}".format(c.get('id'))
+        ])
 
-    if ('summary' in content) and (len(content['summary']) > 1):
-        description = content.get('summary')
-    else:
-        description = content.get('description', {"-"})
     case = Case(
-            title="[Zerofox] #{} ".format(content['id']) + content['title'],
+            title=thTitle(c),
             tlp=2,
-            severity=thSeverity(content['severity']),
+            severity=thSeverity(c.get('severity',"3")),
             flag=False,
             tags=tags,
-            description = description)
+            description = thCaseDescription(c)
+    )
+
     return case
 
 
+def caseAddTask(thapi, caseId, content):
+    """
 
+    :param thapi: requests session
+    :param caseId: text  is id of the task
+    :param c: json as Zerofox content(alert)
+    :return:
+    """
+    if content.get('alert'):
+        c = content.get('alert')
+    else:
+        return "Can't open alert"
+        sys.exit(1)
 
+    task = CaseTask(
+        title="Alert #{} imported from Zerofox".format(c.get('id')),
+        description="Incident from Zerofox"
+    )
 
+    m = zf2markdown(c).taskLog
+    log = CaseTaskLog(message=m)
+    thresponse = thapi.create_case_task(caseId, task)
+    r = thresponse.json()
+    thresponse = thapi.create_task_log(r['id'], log)
 
 
 def import2th(thapi, response):
@@ -95,11 +162,11 @@ def import2th(thapi, response):
 
 def run(argv):
 
-"""
-    Download Zerofox incident and create a new Case in TheHive
+    """
+        Download Zerofox incident and create a new Case in TheHive
 
-    :argv incident number
-"""
+        :argv incident number
+    """
 
     incidentId = ''
 
@@ -130,25 +197,13 @@ def run(argv):
 
     # Create Zerofox session
     zfapi = ZeroFoxApi(Zerofox)
-    response = zfapi.getAlertId(AlertId)
+    response = zfapi.getAlertId(alertId)
 
     if(response.status_code == 200):
         import2th(thapi, response.json())
     else:
         print('ko: {}/{}'.format(response.status_code, response.text))
         sys.exit(0)
-
-
-    # r = zfapi.getApiKey()
-    # print(r.status_code)
-    # print(r.text)
-    #
-# zfapi = ZeroFoxApi(Zerofox)
-# r = zfapi.getOpenAlerts()
-# print(r.status_code)
-# print(r.json())
-
-
 
 
 if __name__ == '__main__':
