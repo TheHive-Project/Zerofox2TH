@@ -172,14 +172,19 @@ def run(argv):
 
     # get options
     try:
-        opts, args = getopt.getopt(argv, 'hi:',["id="])
+        opts, args = getopt.getopt(argv, 'ahi:',["id="])
     except getopt.GetoptError:
-        print(__file__ + " -i <alertIdentifier>")
+        print(__file__ + " -i <alertId> -a")
         sys.exit(2)
     for opt,arg in opts:
         if opt == '-h':
-            print(__file__ + " -i <alertIdentifier>")
+            print(__file__ + " -i <alertId> -a")
             sys.exit()
+        elif opt in ('-a', '--api'):
+            zfapi = ZeroFoxApi(Zerofox)
+            api = zfapi.getApiKey()
+            print(api.json())
+            sys.exit(0)
         elif opt in ('-i','--id'):
             alertId = arg
 
@@ -210,5 +215,6 @@ if __name__ == '__main__':
     if len(sys.argv[1:]) > 0:
         run(sys.argv[1:])
     else:
-        print(__file__ + " -i <incidentId>")
+        print(__file__ + " -i <AlertId>")
+        print(__file__ + " -a")
         sys.exit(2)
