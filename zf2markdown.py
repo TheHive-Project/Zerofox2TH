@@ -10,7 +10,7 @@ class zf2markdown():
     def __init__(self, c):
 
         self.taskLog = "{0}{1}{2}{3}".format(
-            "**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}\n\n".format(
+            "####General Information####\n\n**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}\n\n".format(
                 c.get('alert_type'),
                 c.get('timestamp'),
                 c.get('entity').get('name'),
@@ -18,10 +18,24 @@ class zf2markdown():
                 c.get('rule_name'),
                 c.get('offending_content_url')
             ), "----\n\n#### Entity Information\n\n{}\n\n".format(self.entity(c.get('entity'))),
-            "----\n\n#### Perpetrator Information Information\n\n{}\n\n".format(self.perpetrator(c.get('perpetrator'))),
+            "----\n\n#### Perpetrator  Information\n\n{}\n\n".format(self.perpetrator(c.get('perpetrator'))),
             "----\n\n#### Metadata\n\n{}\n\n".format(self.metadata(c.get('metadata'))),
         )
 
+        self.generalInfo = "#### General Information ####\n\n**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}\n\n".format(
+                c.get('alert_type'),
+                c.get('timestamp'),
+                c.get('entity').get('name'),
+                c.get('network', None),
+                c.get('rule_name', None),
+                c.get('offending_content_url', None)
+            )
+
+        self.entityInfo = "#### Entity Information\n\n{}\n\n".format(self.entity(c.get('entity')))
+
+        self.perpetratorInfo = "#### Perpetrator Information\n\n{}\n\n".format(self.perpetrator(c.get('perpetrator')))
+
+        self.metadata = "#### Metadata\n\n{}\n\n".format(self.metadata(c.get('metadata')))
 
     def entity(self,c):
         return "{0}".format(
@@ -35,7 +49,7 @@ class zf2markdown():
 
     def perpetrator(self,c):
         return "{}".format(
-               "**Username: ** {0}\n\n**Display Name: **{1}\n\n**Account Number: **{2}\n\n**Account Number: **{3}\n\n**URL: **{4}\n\n**Date: **{5}\n\n**Image: **{6}\n\n**Type: **\n\n**Id: **{7}\n\n**Network: **{8}\n\n".format(
+               "**Username: ** {0}\n\n**Display Name: **{1}\n\n**Account Number: **{2}\n\n**URL: **{3}\n\n**Date: **{4}\n\n**Image: **{5}\n\n**Type: **{6}\n\n**Id: **{7}\n\n**Network: **{8}\n\n".format(
                      c.get('username',"None"),
                      c.get('display_name',"None"),
                      c.get('account_number',"None"),
