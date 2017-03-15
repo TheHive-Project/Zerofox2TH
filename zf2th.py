@@ -21,7 +21,7 @@ from Zerofox.api import ZeroFoxApi
 from config import Zerofox, TheHive
 from thehive4py.api import TheHiveApi
 from thehive4py.models import Case,CaseTask,CaseTaskLog
-from zf2markdown import zf2markdown
+from zf2markdown import zf2markdown, thTitle, thCaseDescription
 
 
 
@@ -41,35 +41,7 @@ def addTags(tags, content):
         tags.append("ZF:{}".format(newtag))
     return tags
 
-def thCaseDescription(c):
 
-    """
-        Build Case summary
-
-        :param is dict content(alert)
-    """
-
-    description = "**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}".format(
-                        c.get('alert_type'),
-                        c.get('timestamp'),
-                        c.get('entity').get('name'),
-                        c.get('network'),
-                        c.get('rule_name'),
-                        c.get('offending_content_url')
-
-                    )
-
-    return description
-
-
-
-def thTitle(content):
-    return "[Zerofox] #{0} - {1} in {2} for entity: {3}".format(
-        content.get("id", "-"),
-        content.get("alert_type","-"),
-        content.get("network", "-"),
-        content.get("entity",{}).get("name","-")
-        )
 
 def thSeverity(sev):
 
@@ -158,7 +130,7 @@ def caseAddTask(thapi, caseId, content):
     if c.get('perpetrator').get('image'):
         url = c.get('perpetrator').get('image')
         response = requests.get(url, stream=True)
-        tmppath = '/tmp/thive_outputfile'
+        tmppath = '/tmp/zfperpetrator_image'
         with open(tmppath , 'wb') as outfile:
             shutil.copyfileobj(response.raw, outfile)
             outfile.close()

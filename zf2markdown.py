@@ -84,3 +84,32 @@ class zf2markdown():
                 raw.get('description', "None")
             )
         )
+
+def thCaseDescription(c):
+
+    """
+        Build Case summary
+
+        :param is dict content(alert)
+    """
+
+    description = "**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}".format(
+                        c.get('alert_type'),
+                        c.get('timestamp'),
+                        c.get('entity').get('name'),
+                        c.get('network'),
+                        c.get('rule_name'),
+                        c.get('offending_content_url')
+
+                    )
+
+    return description
+
+
+def thTitle(c):
+    return "[Zerofox] #{0} - {1} in {2} for entity: {3}".format(
+        c.get("id", "-"),
+        c.get("alert_type","-"),
+        c.get("network", "-"),
+        c.get("entity",{}).get("name","-")
+        )
