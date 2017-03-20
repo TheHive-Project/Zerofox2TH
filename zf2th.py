@@ -20,7 +20,7 @@ import shutil
 from Zerofox.api import ZeroFoxApi
 from config import Zerofox, TheHive
 from thehive4py.api import TheHiveApi
-from thehive4py.models import Case,CaseTask,CaseTaskLog
+from thehive4py.models import Case,CaseTask,CaseTaskLog,CaseObservable
 from zf2markdown import zf2markdown, thTitle, thCaseDescription
 
 
@@ -94,8 +94,6 @@ def convertDs2ThCase(content):
 
     return case
 
-# def caseAddTaskLog(thapi, taskId, content):
-
 
 
 def caseAddTask(thapi, caseId, content):
@@ -121,8 +119,6 @@ def caseAddTask(thapi, caseId, content):
     thresponse = thapi.create_case_task(caseId, task)
     r = thresponse.json()
 
-
-
     m = zf2markdown(c).metadata
     log = CaseTaskLog(message=m)
     thresponse = thapi.create_task_log(r['id'], log)
@@ -147,6 +143,35 @@ def caseAddTask(thapi, caseId, content):
     log = CaseTaskLog(message=m)
     thresponse = thapi.create_task_log(r['id'], log)
 
+
+
+def caseAddObservable(thapi, caseId, content):
+    """
+    :param thapi: requests session
+    :param caseId: text  is id of the task
+    :param content : json as Zerofox content(alert)
+    :return:
+    """
+
+    if content.get('alert'):
+        c = content.get('alert')
+        print(c.get('offending_content_url'))
+    else:
+        return "Can't open alert"
+        sys.exit(1)
+
+    observable = CaseObservable(
+        data = c.get('offending_content_url'),
+        dataType ="url",
+        tags = ["src:Zerofox=offending_content"]
+        message = "Offending content",
+        tlp = 1,
+        ioc = False
+    )
+    thresponse = thapi.create_case_observable(caseId, observable)
+    print(thresponse.json)
+
+
 def import2th(thapi, response):
 
     """
@@ -161,6 +186,7 @@ def import2th(thapi, response):
     thresponse = thapi.create_case(case)
     r = thresponse.json()
     caseAddTask(thapi, r['id'], response)
+    caseAddObservable(thapi, r['id'], response)
 
 
 
