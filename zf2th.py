@@ -155,21 +155,19 @@ def caseAddObservable(thapi, caseId, content):
 
     if content.get('alert'):
         c = content.get('alert')
-        print(c.get('offending_content_url'))
     else:
         return "Can't open alert"
         sys.exit(1)
 
     observable = CaseObservable(
-        data = c.get('offending_content_url'),
+        data = [c.get('offending_content_url')],
         dataType ="url",
-        tags = ["src:Zerofox=offending_content"]
+        tags = ["src:Zerofox=offending_content"],
         message = "Offending content",
         tlp = 1,
         ioc = False
     )
     thresponse = thapi.create_case_observable(caseId, observable)
-    print(thresponse.json)
 
 
 def import2th(thapi, response):
