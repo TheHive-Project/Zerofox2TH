@@ -51,7 +51,9 @@ class ZeroFoxApi():
         param = {
             "status": "open",
             "sort_field": "severity",
-            "sort_direction": "desc"}
+            "sort_direction": "desc",
+            "status": "open",
+            "last_modified": 4592000 }
         req = self.url + "/alerts/"
 
         try:
@@ -73,3 +75,4 @@ class ZeroFoxApi():
                                 verify=self.verify)
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
+

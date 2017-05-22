@@ -10,7 +10,7 @@ class zf2markdown():
     def __init__(self, c):
 
         self.taskLog = "{0}{1}{2}{3}".format(
-            "####General Information####\n\n**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}\n\n".format(
+            "#### General Information ####\n\n**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}\n\n".format(
                 c.get('alert_type'),
                 c.get('timestamp'),
                 c.get('entity').get('name'),
@@ -72,18 +72,61 @@ class zf2markdown():
             )
         )
 
+    def addData(self, title, content, key):
+        if content and content.get(key):
+            return "**{}:**\ {}\n\n".format(title, content[key])
+        else:
+            return ""
+
+
     def metadata(self,c):
-        raw=json.loads(c).get("content_raw_data", "None")
-        return "{}".format(
-            "**Matching Name: **{0}\n\n**Entity Id: **{1}\n\n**Content type: **{2}\n\n**Content URL: **{3}\n\n**Page Name: **{4}\n\n**Description**\n\n{5}".format(
-                raw.get('name',"None"),
-                raw.get('id', "None"),
-                json.loads(c).get('content_type', "None"),
-                json.loads(c).get('content_url', "None"),
-                raw.get('global_brand_page_name', "None"),
-                raw.get('description', "None")
-            )
-        )
+        if json.loads(c).get('occurrences'):
+            occurrences = json.loads(c).get('occurrences')
+        else:
+            occurrences = None
+
+        meta = json.loads(c)
+        raw = json.loads(c).get('content_raw_data')
+
+        # metadata = self.addMetadata("Matching Name", raw, 'name')
+        metadata = self.addData("Matching Name", raw, 'name') + \
+            self.addData("Matching Name", raw, 'name') + \
+            self.addData("Entity Id", raw, 'id') + \
+            self.addData("Content type", meta, 'content_type') + \
+            self.addData("Content URL", meta, 'content_url') +\
+            self.addData("Page Name", raw, 'content_url') + \
+            self.addData("Description", raw, 'global_brand_page_name') + \
+            self.addData("Page Name", raw, 'description')
+
+
+
+            # METADATA
+            # Offending Content
+            # User
+
+            #     return "{}".format(
+            # "**Matching Name: **{0}\n\n"
+            # "**Entity Id: **{1}\n\n"
+            # "**Content type: **{2}\n\n"
+            # "**Content URL: **{3}\n\n"
+            # "**Page Name: **{4}\n\n"
+            # "**Description**\n\n{5}"
+            # "**Offending Content**\n\n"
+            # "Terms: {6}\n\n"
+            # "Text: {7}\n\n".format(
+            #     raw.get('name',"None"),
+            #     raw.get('id', "None"),
+            #     json.loads(c).get('content_type', None),
+            #     json.loads(c).get('content_url', None),
+            #     raw.get('global_brand_page_name', "None"),
+            #     raw.get('description', "None"),
+            #     type(occurrences),
+        return metadata
+
+                # raw.get('offending_content',"None").get('term', "None"),
+                # raw.get('offending_conten   t', "None").get('text', "None")
+        #     )
+        # )
 
 def thCaseDescription(c):
 
@@ -93,7 +136,7 @@ def thCaseDescription(c):
         :param is dict content(alert)
     """
 
-    description = "**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}".format(
+    summary = "**Alert type:** {0}\n\n**Date :** {1}\n\n**Target name:** {2}\n\n**network:** {3}\n\n**rule name:** {4}\n\n**Suspicious content:** {5}".format(
                         c.get('alert_type'),
                         c.get('timestamp'),
                         c.get('entity').get('name'),
@@ -103,12 +146,18 @@ def thCaseDescription(c):
 
                     )
 
+    description = "{}\n\n---\n{}\n\n".format(
+        summary,
+        zf2markdown(c).taskLog
+
+
+    )
+
     return description
 
 
 def thTitle(c):
-    return "[Zerofox] #{0} - {1} in {2} for entity: {3}".format(
-        c.get("id", "-"),
+    return "[Zerofox] {0} in {1} for entity: {2}".format(
         c.get("alert_type","-"),
         c.get("network", "-"),
         c.get("entity",{}).get("name","-")

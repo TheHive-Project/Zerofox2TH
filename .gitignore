@@ -94,3 +94,6 @@ ENV/
 .idea/
 sample_alert.json
 contrib
+/sample_alert.json
+samples/
+/samples/

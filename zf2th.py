@@ -20,7 +20,7 @@ import shutil
 from Zerofox.api import ZeroFoxApi
 from config import Zerofox, TheHive
 from thehive4py.api import TheHiveApi
-from thehive4py.models import Case,CaseTask,CaseTaskLog,CaseObservable
+from thehive4py.models import Case,CaseTask,CaseTaskLog,CaseObservable, Alert, AlertArtifact
 from zf2markdown import zf2markdown, thTitle, thCaseDescription
 
 
@@ -94,7 +94,39 @@ def convertDs2ThCase(content):
 
     return case
 
+def prepareAlert(content):
+    """
+    convert Zerofox alert in a TheHive Alert
 
+    :return: alert object
+    """
+    # print(content)
+
+    # if content.get('alerts'):
+    #     c = content.get('alert')
+    # else:
+    #     return "Can't open alert"
+    #     sys.exit(1)
+    c = content
+    tags = ["src:ZeroFOX"]
+    tags = addTags(tags, [
+        c.get("alert_type"),
+        c.get("network"),
+        c.get("entity", {}).get("name", "-"),
+        "id={}".format(c.get('id'))
+    ])
+    artifacts = []
+    alert = Alert(title=thTitle(c),
+                  tlp=2,
+                  tags=tags,
+                  description=thCaseDescription(c),
+                  type='external',
+                  source='Zerofox',
+                  sourceRef=str(c.get('id')),
+                  artifacts=artifacts)
+
+    # print(alert)
+    return alert
 
 def caseAddTask(thapi, caseId, content):
     """
@@ -187,6 +219,23 @@ def import2th(thapi, response):
     caseAddObservable(thapi, r['id'], response)
 
 
+def createThAlerts(thapi, response):
+    """
+    Convert Zerofox alerts and import them in TheHive Alerts
+    :param thapi:
+    :param response: dict response from Zerofox
+    :return: the case created in the alert api of HheHive
+    """
+
+    for a in response.get('alerts'):
+        alert = prepareAlert(a)
+        print(type(alert))
+        thresponse = thapi.create_alert(alert)
+
+
+
+
+
 
 def run(argv):
 
@@ -230,10 +279,15 @@ def run(argv):
 
     # Create Zerofox session
     zfapi = ZeroFoxApi(Zerofox)
-    response = zfapi.getAlertId(alertId)
-
-    if(response.status_code == 200):
-        import2th(thapi, response.json())
+    #response = zfapi.getAlertId(alertId)
+    response = zfapi.getOpenAlerts()
+    # if(response.status_code == 200):
+    #     import2th(thapi, response.json())
+    # else:
+    #     print('ko: {}/{}'.format(response.status_code, response.text))
+    #     sys.exit(0)
+    if (response.status_code == 200):
+            createThAlerts(thapi, response.json())
     else:
         print('ko: {}/{}'.format(response.status_code, response.text))
         sys.exit(0)
