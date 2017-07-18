@@ -7,6 +7,7 @@ from __future__ import (absolute_import, division,
 import requests
 import json
 import sys
+import datetime
 
 class ZeroFoxApi():
 
@@ -42,18 +43,21 @@ class ZeroFoxApi():
             sys.exit("Error: {}".format(e))
 
 
-    def getOpenAlerts(self):
+    def getOpenAlerts(self, duration):
 
         """
             Get all open alerts sorted by severity, descending
+        :duration : number of hours
+        :return : alerts : dict
         """
 
+        min_timestamp = (datetime.datetime.now() - datetime.timedelta(minutes=duration)).isoformat()
         param = {
             "status": "open",
             "sort_field": "severity",
             "sort_direction": "desc",
             "status": "open",
-            "last_modified": 4592000 }
+            "min_timestamp": min_timestamp}
         req = self.url + "/alerts/"
 
         try:
@@ -75,4 +79,3 @@ class ZeroFoxApi():
                                 verify=self.verify)
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
-
