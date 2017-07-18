@@ -6,6 +6,7 @@ Zerofox = {
     'url':'',
     'key':'',
     'username':'',
-    'password':''
+    'password':'',
+    'template':''
 
 }
