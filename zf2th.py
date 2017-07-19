@@ -8,7 +8,7 @@ import json
 import requests
 
 
-from Zerofox.api import ZeroFoxApi
+from Zerofox.api import ZerofoxApi
 from config import Zerofox, TheHive
 from thehive4py.api import TheHiveApi
 from thehive4py.models import Case,CaseTask,CaseTaskLog,CaseObservable, Alert, AlertArtifact
@@ -68,7 +68,7 @@ def add_alert_artefact(artefacts, dataType, data, tags, tlp):
                             )
 
 def init_artefact_tags(content):
-    return ["src:ZeroFOX",
+    return ["src:ZEROFOX",
         "ZF:Perpetrator",
         "Network:{}".format(content.get('network', 'None'))]
 
@@ -122,7 +122,7 @@ def prepare_alert(content):
     """
 
     c = content
-    case_tags = ["src:ZeroFOX"]
+    case_tags = ["src:ZEROFOX"]
     case_tags = add_tags(case_tags, [
         "Type={}".format(c.get("alert_type")),
         "Network={}".format(c.get("network")),
@@ -176,13 +176,13 @@ def run(argv):
 
     for opt,arg in opts:
         if opt in ('-a', '--api'):
-            zfapi = ZeroFoxApi(Zerofox)
+            zfapi = ZerofoxApi(Zerofox)
             api = zfapi.getApiKey()
             print("Token = {}\n"
                   "Add it in the config.py file to start requesting alerts".format(api.json()['token']))
             sys.exit(0)
         elif opt in ('-t','--time'):
-            zfapi = ZeroFoxApi(Zerofox)
+            zfapi = ZerofoxApi(Zerofox)
             response = zfapi.getOpenAlerts(int(arg))
 
 

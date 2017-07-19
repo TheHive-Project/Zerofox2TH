@@ -9,9 +9,8 @@ import json
 import sys
 import datetime
 
-class ZeroFoxApi():
 
-
+class ZerofoxApi():
     """
         Python API for ZeroFOX
 
@@ -21,12 +20,11 @@ class ZeroFoxApi():
     def __init__(self, config):
         self.url = config['url']
         self.key = config['key']
-        self.username=config['username']
-        self.password=config['password']
+        self.username = config['username']
+        self.password = config['password']
         self.proxies = config['proxies']
         self.verify = config['verify']
         self.session = requests.Session()
-        # self.auth= requests.auth.HTTPBasicAuth(username=self.api)
 
     def getApiKey(self):
 
@@ -41,7 +39,6 @@ class ZeroFoxApi():
             return self.session.post(req, data=data, proxies=self.proxies, verify=self.verify)
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
-
 
     def getOpenAlerts(self, duration):
 
@@ -61,11 +58,10 @@ class ZeroFoxApi():
         req = self.url + "/alerts/"
 
         try:
-            return self.session.get(req, headers={'Authorization':'token {}'.format(self.key)},
+            return self.session.get(req, headers={'Authorization': 'token {}'.format(self.key)},
                                     params=param, proxies=self.proxies, verify=self.verify)
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
-
 
     def getAlertId(self, id):
 
@@ -76,6 +72,6 @@ class ZeroFoxApi():
 
         try:
             return self.session.get(req, headers={'Authorization': 'token {}'.format(self.key)}, proxies=self.proxies,
-                                verify=self.verify)
+                                    verify=self.verify)
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
