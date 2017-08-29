@@ -1,5 +1,6 @@
 # Zerofox2TH
-Import ZeroFOX alert to TheHive
+
+Downloads Opened ZeroFOX alerts and creates Alerts into TheHive 
 
 - `ZeroFOX/api.py` : main lib to get ZeroFOX alerts
 - `ds2markdown.py` : converting ZeroFOX alert in markdown for TheHive (used in TheHive tasklog)
@@ -12,8 +13,8 @@ Copy `config.py.template` into `config.py` and fill all connection information n
 
 ## Usage
 
-Identify an interesting alert on ZeroFOX website you want to import un TheHive. Note the alert id number and run the following command on the system it sits :
+Get alerts opened in last <time> minutes :
 
 ```
-$ zf2th.py -i <alertIdentifier>
+$ zf2th.py -t  <time>
 ```
