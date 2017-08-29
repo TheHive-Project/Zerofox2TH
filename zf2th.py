@@ -100,12 +100,17 @@ def prepare_artefacts(content):
             add_alert_artefact(artifacts, 'other', perpetrator.get('username', "None"),
                              add_tags(init_artefact_tags(content), ['{}=\"Username\"'.format(perpetrator.get('network', 'None'))]),
                              2)
-        if json.loads(content.get('metadata')).get('occurrences'):
-            add_alert_artefact(artifacts, 'other',
-                             '{}'.format(
-                                 json.loads(content.get('metadata')).get('occurrences', 'None')[0].get('text', 'None')),
-                             add_tags(init_artefact_tags(content), ['type=\"{}\"'.format(perpetrator.get('type'))]),
-                             2)
+        try:
+            if json.loads(content.get('metadata')).get('occurrences'):
+                add_alert_artefact(artifacts, 'other',
+                                 '{}'.format(
+                                     json.loads(content.get('metadata')).get('occurrences', 'None')[0].get('text', 'None')),
+                                 add_tags(init_artefact_tags(content), ['type=\"{}\"'.format(perpetrator.get('type'))]),
+                                 2)
+
+        except json.decoder.JSONDecodeError:
+            pass
+
     return artifacts
 
 
@@ -166,10 +171,6 @@ def run(argv):
         :argv
     """
 
-    # l = Logging(Logging)
-    # print(l.loggingfile)
-    # print(l.logginglevel)
-    # logging.basicConfig(filename=l.loggingfile, level='DEBUG')
 
     try:
         opts,args = getopt.getopt(argv, 'lht:a',["log=","help", "time=", "api"])
