@@ -99,8 +99,11 @@ class zf2markdown():
 
 
     def metadata(self,c):
-        raw = json.loads(c).get('content_raw_data', None)
-
+        try:
+            raw = json.loads(c, strict=False).get('content_raw_data', None)
+        except json.decoder.JSONDecodeError:
+            raw = None
+            pass
         if raw:
             return json.dumps(raw, indent=4, sort_keys=True)
         else:

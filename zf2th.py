@@ -6,6 +6,7 @@ import os
 import getopt
 import json
 import requests
+import logging
 
 
 from Zerofox.api import ZerofoxApi
@@ -99,12 +100,17 @@ def prepare_artefacts(content):
             add_alert_artefact(artifacts, 'other', perpetrator.get('username', "None"),
                              add_tags(init_artefact_tags(content), ['{}=\"Username\"'.format(perpetrator.get('network', 'None'))]),
                              2)
-        if json.loads(content.get('metadata')).get('occurrences'):
-            add_alert_artefact(artifacts, 'other',
-                             '{}'.format(
-                                 json.loads(content.get('metadata')).get('occurrences', 'None')[0].get('text', 'None')),
-                             add_tags(init_artefact_tags(content), ['type=\"{}\"'.format(perpetrator.get('type'))]),
-                             2)
+        try:
+            if json.loads(content.get('metadata')).get('occurrences'):
+                add_alert_artefact(artifacts, 'other',
+                                 '{}'.format(
+                                     json.loads(content.get('metadata')).get('occurrences', 'None')[0].get('text', 'None')),
+                                 add_tags(init_artefact_tags(content), ['type=\"{}\"'.format(perpetrator.get('type'))]),
+                                 2)
+
+        except json.decoder.JSONDecodeError:
+            pass
+
     return artifacts
 
 
@@ -148,7 +154,10 @@ def create_th_alerts(thapi, response):
     """
     for a in response.get('alerts'):
         alert = prepare_alert(a)
-        thapi.create_alert(alert)
+        response = thapi.create_alert(alert)
+        logging.debug('API TheHive - status code: {}'.format(response.status_code))
+        if response.status_code > 299:
+            logging.debug('API TheHive - raw error output: {}'.format(response.text))
 
 def usage():
     print("Get opened alerts in last <minutes> minutes : {} -t <minutes>\n"
@@ -162,12 +171,19 @@ def run(argv):
         :argv
     """
 
+
     try:
-        opts, args = getopt.getopt(argv, 'ht:a',["help", "time=", "api"])
+        opts,args = getopt.getopt(argv, 'lht:a',["log=","help", "time=", "api"])
     except getopt.GetoptError as err:
         print(err)
         usage()
         sys.exit(2)
+
+    for opt,arg in opts:
+        if opt in ('-l','--log'):
+            logging.basicConfig(filename='{}/zf2th.log'.format(os.path.dirname(os.path.realpath(__file__))
+        ), level=arg, format='%(asctime)s %(levelname)s     %(message)s')
+            logging.debug('logging enabled')
 
     for opt,arg in opts:
         if opt in ('-a', '--api'):
@@ -176,18 +192,24 @@ def run(argv):
             print("Token = {}\n"
                   "Add it in the config.py file to start requesting alerts".format(api.json()['token']))
             sys.exit(0)
+
         elif opt in ('-t','--time'):
+            logging.info('zf2th.py started')
             zfapi = ZerofoxApi(Zerofox)
             response = zfapi.getOpenAlerts(int(arg))
+            logging.debug('API Zerofox - status code : {}'.format(response.status_code))
+            logging.debug('Zerofox: {} alert(s) downloaded'.format(response.json()['count']))
 
-
-            thapi = TheHiveApi(TheHive['url'], TheHive['username'],
-                        TheHive['password'], TheHive['proxies'])
             if response.json()['count'] > 0:
                 thapi = TheHiveApi(TheHive['url'], TheHive['username'],
                         TheHive['password'], TheHive['proxies'])
+                logging.debug('API TheHive - status code: {}'.format(response.status_code))
                 create_th_alerts(thapi, response.json())
 
+            logging.debug('zf2th.py ended')
+
+        elif opt == opt in ('-l','--log'):
+            pass
         elif opt == '-h':
             usage()
             sys.exit()
