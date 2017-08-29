@@ -53,7 +53,6 @@ class ZerofoxApi():
             "status": "open",
             "sort_field": "severity",
             "sort_direction": "desc",
-            "status": "open",
             "min_timestamp": min_timestamp}
         req = self.url + "/alerts/"
 

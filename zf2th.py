@@ -24,10 +24,8 @@ def add_tags(tags, content):
         :param content is list
     """
     t = tags
-    print('\n\ninittags: {}\ncontent: {}'.format(t, content))
     for newtag in content:
         t.append("ZF:{}".format(newtag))
-    print('t: {}'.format(t))
     return t
 
 
@@ -85,7 +83,6 @@ def prepare_artefacts(content):
         add_alert_artefact(artifacts, 'other', perpetrator.get('display_name', "None"),
                          add_tags(init_artefact_tags(content), ['{}=\"Display Name\"'.format(perpetrator.get('network', 'None'))]),
                          2)
-        print("artifact_tags:{}".format(artifact_tags))
         add_alert_artefact(artifacts, 'url', perpetrator.get('url', "None"),
                          init_artefact_tags(content),
                          2)
@@ -103,8 +100,6 @@ def prepare_artefacts(content):
                              add_tags(init_artefact_tags(content), ['{}=\"Username\"'.format(perpetrator.get('network', 'None'))]),
                              2)
         if json.loads(content.get('metadata')).get('occurrences'):
-            print((json.loads(content.get('metadata')).get('occurrences', 'None')[0].get('text', 'None')))
-
             add_alert_artefact(artifacts, 'other',
                              '{}'.format(
                                  json.loads(content.get('metadata')).get('occurrences', 'None')[0].get('text', 'None')),
