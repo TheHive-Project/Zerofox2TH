@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# from __future__ import print_function
-# from __future__ import unicode_literals
 import json
+from PIL import Image
+from io import BytesIO
+import base64
+import requests
+import logging
+
 
 class zf2markdown():
 
@@ -51,22 +55,25 @@ class zf2markdown():
 
 
     def entity(self, c):
+        entity_image = get_image(c)
         return "- **Entity Name**:  {0}\n\n" \
                "- **Entity Id**: {1}\n\n" \
-               "- **Entity Image**: ![{2}]({2})\n\n".format(
+               "- **Entity Image (resized)**: ![][entity]\n\n[entity]: {2}\n\n".format(
                 c.get('name'),
                 c.get('id'),
-                c.get('image')
+                entity_image
         )
 
 
     def perpetrator(self,c):
+        perpetrator_image = get_image(c)
+
         return "- **Username**: {0}\n\n" \
                "- **Display Name**: {1}\n\n" \
                "- **Account Number**: {2}\n\n" \
                "- **URL**: {3}\n\n" \
                "- **Date**: {4}\n\n" \
-               "- **Image**: ![]({5})\n\n" \
+               "- **Image (resized)**: ![][perpetrator]\n\n[perpetrator]: {5}\n\n" \
                "- **Type**: {6}\n\n" \
                "- **Id**: {7}\n\n" \
                "- **Network**: {8}\n\n".format(
@@ -75,7 +82,7 @@ class zf2markdown():
                      c.get('account_number',"None"),
                      c.get('url',"None"),
                      c.get('timestamp',"None"),
-                     c.get('image',"None"),
+                     perpetrator_image,
                      c.get('type',"None"),
                      c.get('id',"None"),
                      c.get('network', "None")
@@ -83,12 +90,13 @@ class zf2markdown():
 
 
     def asset(self,c):
+        asset_image = get_image(c)
         return "- **Entity Name**: {0}\n\n" \
                "- **Entity Id**: {1}\n\n" \
-               "- **Entity Image**: {2}\n\n".format(
+               "- **Entity Image**: ![][asset]\n\n[asset]: {2}\n\n".format(
                 c.get('name'),
                 c.get('id'),
-                c.get('image')
+                asset_image
             )
 
     def addData(self, title, content, key):
@@ -99,14 +107,37 @@ class zf2markdown():
 
 
     def metadata(self,c):
-        raw = json.loads(c).get('content_raw_data', None)
-
+        try:
+            raw = json.loads(c, strict=False).get('content_raw_data', None)
+        except json.decoder.JSONDecodeError:
+            raw = None
+            pass
         if raw:
             return json.dumps(raw, indent=4, sort_keys=True)
         else:
             return "None"
 
-
+def get_image(c):
+    try:
+        url = c.get('image')
+        response = requests.get(url)
+        fd = BytesIO(response.content)
+        image = Image.open(fd)
+        ft = image.format
+        basewidth = 400
+        wpercent = (basewidth / float(image.size[0]))
+        if image.size[0] > basewidth:
+            hsize = int(float(image.size[1]) * float(wpercent))
+            image = image.resize((basewidth, hsize), Image.ANTIALIAS)
+        ImgByteArr = BytesIO()
+        image.save(ImgByteArr, format=ft)
+        ImgByteArr = ImgByteArr.getvalue()
+        with BytesIO(ImgByteArr) as bytes:
+            encoded = base64.b64encode(bytes.read())
+            b64_image = encoded.decode()
+            return  "data:{};base64,{}".format(response.headers['Content-Type'], b64_image)
+    except:
+        return "None"
 
 def th_case_description(c):
 
