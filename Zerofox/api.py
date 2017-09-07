@@ -48,7 +48,7 @@ class ZerofoxApi():
         :return : alerts : dict
         """
 
-        min_timestamp = (datetime.datetime.now() - datetime.timedelta(minutes=duration)).isoformat()
+        min_timestamp = (datetime.datetime.utcnow() - datetime.timedelta(minutes=duration)).isoformat()
         param = {
             "status": "open",
             "sort_field": "severity",
