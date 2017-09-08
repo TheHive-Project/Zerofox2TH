@@ -74,3 +74,15 @@ class ZerofoxApi():
                                     verify=self.verify)
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
+
+    # def get_image(self, url):
+    #     """
+    #
+    #     :param url:
+    #     :return: response
+    #     """
+        # try:
+        #     return requests.get(url, proxies=self.proxies,
+        #                             verify=self.verify)
+        # except requests.exceptions.RequestException as e:
+        #     sys.exit("Error: {}".format(e))
