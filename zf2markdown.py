@@ -4,9 +4,11 @@
 import json
 from PIL import Image
 from io import BytesIO
+from config import Zerofox
 import base64
-import requests
 import logging
+import requests
+import sys
 
 
 class zf2markdown():
@@ -119,8 +121,9 @@ class zf2markdown():
 
 def get_image(c):
     try:
-        url = c.get('image')
-        response = requests.get(url)
+        # response = get_image(c.get('image'))
+        response = requests.get(c.get('image'), proxies=Zerofox.get('proxies'), verify=Zerofox.get('verify'))
+        logging.debug("get_image status code: {}".format(response.status_code))
         fd = BytesIO(response.content)
         image = Image.open(fd)
         ft = image.format

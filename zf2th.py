@@ -157,7 +157,7 @@ def create_th_alerts(thapi, response):
         response = thapi.create_alert(alert)
         logging.debug('API TheHive - status code: {}'.format(response.status_code))
         if response.status_code > 299:
-            logging.debug('API TheHive - raw error output: {}'.format(response.text))
+            logging.debug('API TheHive - raw error output: {}'.format(response.raw.read()))
 
 def usage():
     print("Get opened alerts in last <minutes> minutes : {} -t <minutes>\n"
