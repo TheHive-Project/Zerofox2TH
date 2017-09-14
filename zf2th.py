@@ -7,13 +7,55 @@ import getopt
 import json
 import requests
 import logging
-
+import getpass
 
 from Zerofox.api import ZerofoxApi
 from config import Zerofox, TheHive
 from thehive4py.api import TheHiveApi
 from thehive4py.models import Case,CaseTask,CaseTaskLog,CaseObservable, Alert, AlertArtifact
 from zf2markdown import zf2markdown, th_title, th_case_description
+
+class monitoring():
+
+    def __init__(self, file, freq):
+        self.monitoring_file = file
+        self.freq = freq
+
+    def start(self):
+        """
+        delete and create a new monitoring_file
+        :return: 
+        """
+        if not os.path.isfile(self.monitoring_file):
+            f = open(self.monitoring_file, 'a')
+            f.close()
+            logging.debug("Creating monitoring file")
+        else:
+            if datetime.datetime.utcfromtimestamp((os.stat(self.monitoring_file).st_birthtime)) > ( datetime.datetime.utcnow() - datetime.timedelta(minutes=self.freq)):
+                logging.info("ellapsed time without running: {} -> {}}".format(
+                    datetime.datetime.fromtimestamp((os.stat(self.monitoring_file).st_birthtime).isoformat(),
+                    datetime.datetime.now().isoformat()
+                )))
+            
+            os.remove(self.monitoring)
+            f = open(self.monitoring_file,'a')
+            f.close()
+
+
+    def finish(self):
+        """
+        Append 'SUCCESS' in monitoring_file
+        :return:
+        """
+        
+        try:
+            f = open(self.monitoring_file, 'a')
+            f.write("SUCCESS")
+            f.close()
+        except (IOError, OSError) as e:
+            logging.debug("Monitoring file error: {}".format(e))
+            sys.exit(1)
+
 
 
 def add_tags(tags, content):
@@ -34,7 +76,7 @@ def add_tags(tags, content):
 def th_severity(sev):
 
     """
-        convert DigitalShadows severity in TH severity
+        convert Zerofox severity in TH severity
         :sev string
     """
 
@@ -50,7 +92,6 @@ def th_severity(sev):
 
 def add_alert_artefact(artefacts, dataType, data, tags, tlp):
     """
-
     :param artefacts: array
     :param dataType: string
     :param data: string
@@ -183,18 +224,31 @@ def run(argv):
         if opt in ('-l','--log'):
             logging.basicConfig(filename='{}/zf2th.log'.format(os.path.dirname(os.path.realpath(__file__))
         ), level=arg, format='%(asctime)s %(levelname)s     %(message)s')
-            logging.debug('logging enabled')
+            # logging.debug('logging enabled')
 
     for opt,arg in opts:
         if opt in ('-a', '--api'):
+            if not Zerofox['password']:
+                Zerofox['username'] = input("Zerofox Username [%s]: " % getpass.getuser())
+                Zerofox['password'] = getpass.getpass("Zerofox Password: ")
             zfapi = ZerofoxApi(Zerofox)
-            api = zfapi.getApiKey()
-            print("Token = {}\n"
-                  "Add it in the config.py file to start requesting alerts".format(api.json()['token']))
-            sys.exit(0)
+            t = zfapi.getApiKey()
+            if t.get("status") == "success":
+                print("Token = {}\n"
+                      "Add it in the config.py file to start requesting alerts".format(t.get("content")['token']))
+                sys.exit(0)
+            else:
+                print(t.get("content"))
+                sys.exit(1)
 
         elif opt in ('-t','--time'):
             logging.info('zf2th.py started')
+            
+            # Starting progrom
+            m = monitoring(Zerofox.get("monitoring_file", "{}/zf2th.status".format(os.path.realpath(__file__))))
+            m.start()
+
+            # Getting Zerofox Alerts
             zfapi = ZerofoxApi(Zerofox)
             response = zfapi.getOpenAlerts(int(arg))
             logging.debug('API Zerofox - status code : {}'.format(response.status_code))
