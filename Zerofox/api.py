@@ -24,7 +24,16 @@ class ZerofoxApi():
         self.password = config['password']
         self.proxies = config['proxies']
         self.verify = config['verify']
-        self.session = requests.Session()
+        # self.session = requests.Session()
+
+    def response(self, status, content):
+        """
+        status: success/failure
+        content: JSON
+        return: JSON
+        """
+
+        return {'status':status, 'content': content}
 
     def getApiKey(self):
 
@@ -36,7 +45,11 @@ class ZerofoxApi():
         data = {'username': self.username,
                 'password': self.password}
         try:
-            return self.session.post(req, data=data, proxies=self.proxies, verify=self.verify)
+            resp =  requests.post(req, data=data, proxies=self.proxies, verify=self.verify)
+            if resp.status_code == '200':
+                return self.response("success", resp.json())
+            else:
+                return self.response("failure", resp.json())
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
 
