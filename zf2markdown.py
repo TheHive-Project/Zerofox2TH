@@ -59,7 +59,6 @@ class zf2markdown():
 
 
     def entity(self, c):
-        # entity_image = get_image(c)
         return "- **Entity Name**:  {0}\n\n" \
                "- **Entity Id**: {1}\n\n" \
                "- **Entity Image (resized)**: ![][entity]\n\n[entity]: {2}\n\n".format(
@@ -70,7 +69,6 @@ class zf2markdown():
 
 
     def perpetrator(self,c):
-        # perpetrator_image = get_image(c)
 
         return "- **Username**: {0}\n\n" \
                "- **Display Name**: {1}\n\n" \
@@ -120,29 +118,6 @@ class zf2markdown():
             return json.dumps(raw, indent=4, sort_keys=True)
         else:
             return "None"
-
-# def get_image(c):
-#     try:
-#         # response = get_image(c.get('image'))
-#         response = requests.get(c.get('image'), proxies=Zerofox.get('proxies'), verify=Zerofox.get('verify'))
-#         logging.debug("get_image status code: {}".format(response.status_code))
-#         fd = BytesIO(response.content)
-#         image = Image.open(fd)
-#         ft = image.format
-#         basewidth = 400
-#         wpercent = (basewidth / float(image.size[0]))
-#         if image.size[0] > basewidth:
-#             hsize = int(float(image.size[1]) * float(wpercent))
-#             image = image.resize((basewidth, hsize), Image.ANTIALIAS)
-#         ImgByteArr = BytesIO()
-#         image.save(ImgByteArr, format=ft)
-#         ImgByteArr = ImgByteArr.getvalue()
-#         with BytesIO(ImgByteArr) as bytes:
-#             encoded = base64.b64encode(bytes.read())
-#             b64_image = encoded.decode()
-#             return  "data:{};base64,{}".format(response.headers['Content-Type'], b64_image)
-#     except:
-#         return "None"
 
 def th_case_description(c, thumbnails):
 
