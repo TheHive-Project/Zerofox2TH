@@ -13,8 +13,10 @@ import sys
 
 class zf2markdown():
 
-    def __init__(self, c):
+    def __init__(self, c, thumbnails):
 
+        self.entity_image = thumbnails.get("entity_image")
+        self.perpetrator_image = thumbnails.get("perpetrator_image")
         self.generalInfo = "### General Information\n\n" \
                            "***\n\n" \
                            "- **Alert type**: {0}\n\n" \
@@ -57,18 +59,18 @@ class zf2markdown():
 
 
     def entity(self, c):
-        entity_image = get_image(c)
+        # entity_image = get_image(c)
         return "- **Entity Name**:  {0}\n\n" \
                "- **Entity Id**: {1}\n\n" \
                "- **Entity Image (resized)**: ![][entity]\n\n[entity]: {2}\n\n".format(
                 c.get('name'),
                 c.get('id'),
-                entity_image
+                self.entity_image
         )
 
 
     def perpetrator(self,c):
-        perpetrator_image = get_image(c)
+        # perpetrator_image = get_image(c)
 
         return "- **Username**: {0}\n\n" \
                "- **Display Name**: {1}\n\n" \
@@ -84,7 +86,7 @@ class zf2markdown():
                      c.get('account_number',"None"),
                      c.get('url',"None"),
                      c.get('timestamp',"None"),
-                     perpetrator_image,
+                     self.perpetrator_image,
                      c.get('type',"None"),
                      c.get('id',"None"),
                      c.get('network', "None")
@@ -119,30 +121,30 @@ class zf2markdown():
         else:
             return "None"
 
-def get_image(c):
-    try:
-        # response = get_image(c.get('image'))
-        response = requests.get(c.get('image'), proxies=Zerofox.get('proxies'), verify=Zerofox.get('verify'))
-        logging.debug("get_image status code: {}".format(response.status_code))
-        fd = BytesIO(response.content)
-        image = Image.open(fd)
-        ft = image.format
-        basewidth = 400
-        wpercent = (basewidth / float(image.size[0]))
-        if image.size[0] > basewidth:
-            hsize = int(float(image.size[1]) * float(wpercent))
-            image = image.resize((basewidth, hsize), Image.ANTIALIAS)
-        ImgByteArr = BytesIO()
-        image.save(ImgByteArr, format=ft)
-        ImgByteArr = ImgByteArr.getvalue()
-        with BytesIO(ImgByteArr) as bytes:
-            encoded = base64.b64encode(bytes.read())
-            b64_image = encoded.decode()
-            return  "data:{};base64,{}".format(response.headers['Content-Type'], b64_image)
-    except:
-        return "None"
+# def get_image(c):
+#     try:
+#         # response = get_image(c.get('image'))
+#         response = requests.get(c.get('image'), proxies=Zerofox.get('proxies'), verify=Zerofox.get('verify'))
+#         logging.debug("get_image status code: {}".format(response.status_code))
+#         fd = BytesIO(response.content)
+#         image = Image.open(fd)
+#         ft = image.format
+#         basewidth = 400
+#         wpercent = (basewidth / float(image.size[0]))
+#         if image.size[0] > basewidth:
+#             hsize = int(float(image.size[1]) * float(wpercent))
+#             image = image.resize((basewidth, hsize), Image.ANTIALIAS)
+#         ImgByteArr = BytesIO()
+#         image.save(ImgByteArr, format=ft)
+#         ImgByteArr = ImgByteArr.getvalue()
+#         with BytesIO(ImgByteArr) as bytes:
+#             encoded = base64.b64encode(bytes.read())
+#             b64_image = encoded.decode()
+#             return  "data:{};base64,{}".format(response.headers['Content-Type'], b64_image)
+#     except:
+#         return "None"
 
-def th_case_description(c):
+def th_case_description(c, thumbnails):
 
     """
         Build Case summary
@@ -151,7 +153,7 @@ def th_case_description(c):
     """
 
     description = "{}".format(
-        zf2markdown(c).description
+        zf2markdown(c, thumbnails).description
     )
 
     return description

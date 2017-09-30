@@ -20,11 +20,10 @@ class ZerofoxApi():
     def __init__(self, config):
         self.url = config['url']
         self.key = config['key']
-        self.username = config['username']
-        self.password = config['password']
         self.proxies = config['proxies']
         self.verify = config['verify']
-        # self.session = requests.Session()
+        self.username = config.get('username', None)
+        self.password = config.get('password', None)
 
     def response(self, status, content):
         """
@@ -32,8 +31,7 @@ class ZerofoxApi():
         content: JSON
         return: JSON
         """
-
-        return {'status':status, 'content': content}
+        return {'status':status, 'data': content}
 
     def getApiKey(self):
 
@@ -46,36 +44,41 @@ class ZerofoxApi():
                 'password': self.password}
         try:
             resp =  requests.post(req, data=data, proxies=self.proxies, verify=self.verify)
-            if resp.status_code == '200':
+            if resp.status_code == 200:
                 return self.response("success", resp.json())
             else:
                 return self.response("failure", resp.json())
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
 
-    def getOpenAlerts(self, duration):
+    def find_alerts(self, since):
 
         """
             Get all open alerts sorted by severity, descending
-        :duration : number of hours
+        :since : number of hours
         :return : alerts : dict
         """
 
-        min_timestamp = (datetime.datetime.utcnow() - datetime.timedelta(minutes=duration)).isoformat()
+        min_timestamp = (datetime.datetime.utcnow() - datetime.timedelta(minutes=since)).isoformat()
         param = {
             "status": "open",
+            # 'status': "",
             "sort_field": "severity",
             "sort_direction": "desc",
             "min_timestamp": min_timestamp}
         req = self.url + "/alerts/"
 
         try:
-            return self.session.get(req, headers={'Authorization': 'token {}'.format(self.key)},
+            resp = requests.get(req, headers={'Authorization': 'token {}'.format(self.key)},
                                     params=param, proxies=self.proxies, verify=self.verify)
+            if resp.status_code == 200:
+                return self.response("success", resp.json())
+            else:
+                return self.response("failure", resp.json())
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
 
-    def getAlertId(self, id):
+    def get_alerts(self, id):
 
         """
             Get Alert by Id
@@ -83,11 +86,22 @@ class ZerofoxApi():
         req = self.url + "/alerts/{}/".format(id)
 
         try:
-            return self.session.get(req, headers={'Authorization': 'token {}'.format(self.key)}, proxies=self.proxies,
+            resp = requests.get(req, headers={'Authorization': 'token {}'.format(self.key)}, proxies=self.proxies,
                                     verify=self.verify)
+            if resp.status_code == 200:
+                return self.response("success", resp.json())
+            else:
+                return self.response("failure", resp.json())
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
 
+    def get_image(self, url):
+        try:
+            return requests.get(url, headers={'Authorization': 'token {}'.format(self.key)},
+                                    proxies=self.proxies, verify=self.verify)
+        except requests.exceptions.RequestException as e:
+            sys.exit("Error: {}".format(e))
+            
     # def get_image(self, url):
     #     """
     #

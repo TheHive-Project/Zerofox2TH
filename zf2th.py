@@ -3,11 +3,16 @@
 
 import sys
 import os
-import getopt
+# import getopt
 import json
 import requests
 import logging
 import getpass
+import argparse
+import datetime
+import base64
+from PIL import Image
+from io import BytesIO
 
 from Zerofox.api import ZerofoxApi
 from config import Zerofox, TheHive
@@ -31,13 +36,13 @@ class monitoring():
             f.close()
             logging.debug("Creating monitoring file")
         else:
-            if datetime.datetime.utcfromtimestamp((os.stat(self.monitoring_file).st_birthtime)) > ( datetime.datetime.utcnow() - datetime.timedelta(minutes=self.freq)):
-                logging.info("ellapsed time without running: {} -> {}}".format(
-                    datetime.datetime.fromtimestamp((os.stat(self.monitoring_file).st_birthtime).isoformat(),
-                    datetime.datetime.now().isoformat()
-                )))
+            if datetime.datetime.utcfromtimestamp((os.stat(self.monitoring_file).st_birthtime)) > \
+                                ( datetime.datetime.utcnow() - datetime.timedelta(minutes=self.freq)):
+                logging.info("ellapsed time without running: {} -> {}".format(
+                    datetime.datetime.fromtimestamp(os.stat(self.monitoring_file).st_birthtime).isoformat(),
+                    datetime.datetime.now().isoformat()))
             
-            os.remove(self.monitoring)
+            os.remove(self.monitoring_file)
             f = open(self.monitoring_file,'a')
             f.close()
 
@@ -115,13 +120,9 @@ def init_artefact_tags(content):
 def prepare_artefacts(content):
 
     artifact_tags = init_artefact_tags(content)
-
     artifacts = []
-
     if content.get('perpetrator'):
         perpetrator = content.get('perpetrator')
-
-
         add_alert_artefact(artifacts, 'other', perpetrator.get('display_name', "None"),
                          add_tags(init_artefact_tags(content), ['{}=\"Display Name\"'.format(perpetrator.get('network', 'None'))]),
                          2)
@@ -136,7 +137,6 @@ def prepare_artefacts(content):
         add_alert_artefact(artifacts, 'other', '{}'.format(perpetrator.get('id', "None")),
                          add_tags(init_artefact_tags(content), ['{}=\"id\"'.format(perpetrator.get('network'))]),
                          2)
-
         if perpetrator.get('username') != '':
             add_alert_artefact(artifacts, 'other', perpetrator.get('username', "None"),
                              add_tags(init_artefact_tags(content), ['{}=\"Username\"'.format(perpetrator.get('network', 'None'))]),
@@ -156,7 +156,7 @@ def prepare_artefacts(content):
 
 
 
-def prepare_alert(content):
+def prepare_alert(content, thumbnails):
     """
     convert Zerofox alert in a TheHive Alert
 
@@ -177,7 +177,7 @@ def prepare_alert(content):
                   tlp=2,
                   tags=case_tags,
                   severity=th_severity(c.get('severity',"3")),
-                  description=th_case_description(c),
+                  description=th_case_description(c, thumbnails),
                   type='{}'.format(c.get('alert_type')),
                   source='Zerofox',
                   caseTemplate=TheHive['template'],
@@ -186,93 +186,149 @@ def prepare_alert(content):
     return alert
 
 
-def create_th_alerts(thapi, response):
+def create_th_alerts(config, alerts):
     """
     Convert Zerofox alerts and import them in TheHive Alerts
-    :param thapi:
+    :param config:
+    :param alerts:
+    :type alerts: dict
     :param response: dict response from Zerofox
-    :return: the case created in the alert api of HheHive
+    :rtype: the case created in the alert api of HheHive
     """
-    for a in response.get('alerts'):
-        alert = prepare_alert(a)
-        response = thapi.create_alert(alert)
+    thapi = TheHiveApi(config.get('url', None), config.get('key'), config.get('password', None),
+                       config.get('proxies'))
+    print(alerts)
+    for a in alerts:
+        response = thapi.create_alert(a)
         logging.debug('API TheHive - status code: {}'.format(response.status_code))
         if response.status_code > 299:
             logging.debug('API TheHive - raw error output: {}'.format(response.raw.read()))
 
-def usage():
-    print("Get opened alerts in last <minutes> minutes : {} -t <minutes>\n"
-          "Get Zerofox API token : {} -a".format(__file__, __file__))
+
+def get_alerts(zfapi, id_list):
+    """
+    :return: list of TH Alerts
+    :rtype: list
+    """
+    while id_list:
+        id = id_list.pop()
+        response = zfapi.get_alerts(id)
+        if response.get('status') == "success":
+            data = response.get('data').get('alerts')
+            entity_image_url = data.get("entity").get("image") if ("entity" in data and "image" in data.get("entity")) else None            
+            perpetrator_image_url = data.get("perpetrator").get("image") if ("perpetrator" in data and "image" in data.get("perpetrator")) else None
+            thumbnails = build_thumbnails(zfapi, entity_image_url, perpetrator_image_url )
+            yield prepare_alert(data, thumbnails)
 
 
-def run(argv):
+def find_alerts(zfapi, since):
+    """
+    :return: list of TH Alerts
+    :rtype: list
+    """
+    response = zfapi.find_alerts(since)
+    if response.get('status') == "success":
+            data = response.get('data').get('alerts')
+            for a in data:
+                entity_image_url = a.get("entity").get("image") if ("entity" in a and "image" in a.get("entity")) else None            
+                perpetrator_image_url = a.get("perpetrator").get("image") if ("perpetrator" in a and "image" in a.get("perpetrator")) else None
+                thumbnails = build_thumbnails(zfapi, entity_image_url, perpetrator_image_url )
+                yield prepare_alert(a, thumbnails)
+
+    
+
+def base64_image(content, width):
+        fd = BytesIO(content)
+        image = Image.open(fd)
+        ft = image.format
+        # basewidth = width
+        wpercent = (width / float(image.size[0]))
+        if image.size[0] > width:
+            hsize = int(float(image.size[1]) * float(wpercent))
+            image = image.resize((width, hsize), Image.ANTIALIAS)
+        ImgByteArr = BytesIO()
+        image.save(ImgByteArr, format=ft)
+        ImgByteArr = ImgByteArr.getvalue()
+        with BytesIO(ImgByteArr) as bytes:
+            encoded = base64.b64encode(bytes.read())
+            base64_image = encoded.decode()
+        return base64_image
+        
+    
+def build_thumbnails(zfapi, entity_image_url, perpetrator_image_url):
+    if entity_image_url is not None:
+        resp_entity_image = zfapi.get_image(entity_image_url)
+        entity_image = "data:{};base64,{}".format(resp_entity_image.headers['Content-Type'], base64_image(resp_entity_image.content, 400))
+    else:
+        resp_entity_image = None
+        entity_image = "no image"
+
+    if perpetrator_image_url is not None:
+        resp_perpetrator_image = zfapi.get_image(perpetrator_image_url)
+        perpetrator_image = "data:{};base64,{}".format(resp_perpetrator_image.headers['Content-Type'], base64_image(resp_perpetrator_image.content, 400))
+    else:
+        perpetrator_image = "no image"
+
+    return {
+        "entity_image":entity_image,
+        "perpetrator_image":perpetrator_image
+        }
+
+
+def run():
 
     """
-        Download Zerofox incident and create a new Case in TheHive
-        :argv
+        Download Zerofox alerts and create a new Case in TheHive
     """
 
-
-    try:
-        opts,args = getopt.getopt(argv, 'lht:a',["log=","help", "time=", "api"])
-    except getopt.GetoptError as err:
-        print(err)
-        usage()
-        sys.exit(2)
-
-    for opt,arg in opts:
-        if opt in ('-l','--log'):
-            logging.basicConfig(filename='{}/zf2th.log'.format(os.path.dirname(os.path.realpath(__file__))
-        ), level=arg, format='%(asctime)s %(levelname)s     %(message)s')
-            # logging.debug('logging enabled')
-
-    for opt,arg in opts:
-        if opt in ('-a', '--api'):
-            if not Zerofox['password']:
-                Zerofox['username'] = input("Zerofox Username [%s]: " % getpass.getuser())
-                Zerofox['password'] = getpass.getpass("Zerofox Password: ")
+    def get_api(args):
+        debug = args.debug
+        if "password" not in Zerofox:
+            Zerofox['username'] = input("Zerofox Username [%s]: " % getpass.getuser())
+            Zerofox['password'] = getpass.getpass("Zerofox Password: ")
             zfapi = ZerofoxApi(Zerofox)
             t = zfapi.getApiKey()
             if t.get("status") == "success":
-                print("Token = {}\n"
-                      "Add it in the config.py file to start requesting alerts".format(t.get("content")['token']))
-                sys.exit(0)
-            else:
-                print(t.get("content"))
-                sys.exit(1)
-
-        elif opt in ('-t','--time'):
-            logging.info('zf2th.py started')
-            
-            # Starting progrom
-            m = monitoring(Zerofox.get("monitoring_file", "{}/zf2th.status".format(os.path.realpath(__file__))))
-            m.start()
-
-            # Getting Zerofox Alerts
-            zfapi = ZerofoxApi(Zerofox)
-            response = zfapi.getOpenAlerts(int(arg))
-            logging.debug('API Zerofox - status code : {}'.format(response.status_code))
-            logging.debug('Zerofox: {} alert(s) downloaded'.format(response.json()['count']))
-
-            if response.json()['count'] > 0:
-                thapi = TheHiveApi(TheHive['url'], TheHive['username'],
-                        TheHive['password'], TheHive['proxies'])
-                logging.debug('API TheHive - status code: {}'.format(response.status_code))
-                create_th_alerts(thapi, response.json())
-
-            logging.debug('zf2th.py ended')
-
-        elif opt == opt in ('-l','--log'):
-            pass
-        elif opt == '-h':
-            usage()
-            sys.exit()
+                print("Token = {}\n \
+                    Add this to your config.py file to start requesting alerts".format(t.get("data")['token']))
+            sys.exit(0)
         else:
-            assert False, "unhandled option"
+            print(t.get("content"))
+            sys.exit(1)
 
+    def alerts(args):
+        zfapi = ZerofoxApi(Zerofox)
+        alerts = get_alerts(zfapi, args.id)
+        create_th_alerts(TheHive, alerts)
+
+    def find(args):
+        since = args.since.pop()
+        monitor = args.monitor
+        zfapi = ZerofoxApi(Zerofox)
+        alerts = find_alerts(zfapi, since)
+        create_th_alerts(TheHive,alerts)
+        m.finish()
+
+    parser = argparse.ArgumentParser(description="Get ZF alerts and create alerts in TheHive")
+    parser.add_argument("-d", "--debug", action='store_true', default=False,
+                        help="generate a log file and and active debug logging")
+    subparsers = parser.add_subparsers(help="subcommand help")
+    parser_api = subparsers.add_parser("api", help="Get your api key")
+    parser_api.set_defaults(func=get_api)
+    parser_alert = subparsers.add_parser('alerts', help="fetch alerts by ID")
+    parser_alert.add_argument("id", metavar="ID", action='store', type=int, nargs='+', help="Get ZF alerts by ID")
+    parser_alert.set_defaults(func=alerts)
+    parser_find = subparsers.add_parser('find', help="find incidents and intel-incidents in time")
+    parser_find.add_argument("-s", "--since", metavar="M", nargs=1, type=int, required=True, help="Get all alerts since last [M] minutes")
+    parser_find.add_argument("-m", "--monitor", action='store_true', default=False,
+                        help="active monitoring")
+    parser_find.set_defaults(func=find)
+    
+    if len(sys.argv[1:]) == 0:
+        parser.print_help()
+        parser.exit()
+    args = parser.parse_args()
+    args.func(args)
 
 if __name__ == '__main__':
-    if len(sys.argv[1:]) > 0:
-        run(sys.argv[1:])
-    else:
-        usage()
+    run()
