@@ -2,13 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-from PIL import Image
-from io import BytesIO
-from config import Zerofox
-import base64
-import logging
-import requests
-import sys
 
 
 class zf2markdown():
@@ -47,15 +40,10 @@ class zf2markdown():
                         "{}\n\n" \
                         "```\n\n".format(self.metadata(c.get('metadata')))
 
-
-
-
-        self.description = "{0}{1}{2}{3}".format(
-            self.generalInfo,
-            self.entityInfo,
-            self.perpetratorInfo,
-            self.metadataInfo,
-        )
+        self.description = "{0}{1}{2}{3}".format(self.generalInfo,
+                                                 self.entityInfo,
+                                                 self.perpetratorInfo,
+                                                 self.metadataInfo)
 
 
     def entity(self, c):
@@ -64,8 +52,7 @@ class zf2markdown():
                "- **Entity Image (resized)**: ![][entity]\n\n[entity]: {2}\n\n".format(
                 c.get('name'),
                 c.get('id'),
-                self.entity_image
-        )
+                self.entity_image)
 
 
     def perpetrator(self,c):
@@ -90,15 +77,13 @@ class zf2markdown():
                      c.get('network', "None")
                  )
 
-
-    def asset(self,c):
-        asset_image = get_image(c)
+    def asset(self, c):
         return "- **Entity Name**: {0}\n\n" \
                "- **Entity Id**: {1}\n\n" \
                "- **Entity Image**: ![][asset]\n\n[asset]: {2}\n\n".format(
                 c.get('name'),
                 c.get('id'),
-                asset_image
+                self.entity_image
             )
 
     def addData(self, title, content, key):
@@ -107,8 +92,7 @@ class zf2markdown():
         else:
             return ""
 
-
-    def metadata(self,c):
+    def metadata(self, c):
         try:
             raw = json.loads(c, strict=False).get('content_raw_data', None)
         except json.decoder.JSONDecodeError:
@@ -118,6 +102,7 @@ class zf2markdown():
             return json.dumps(raw, indent=4, sort_keys=True)
         else:
             return "None"
+
 
 def th_case_description(c, thumbnails):
 
@@ -136,7 +121,7 @@ def th_case_description(c, thumbnails):
 
 def th_title(c):
     return "[Zerofox] {0} in {1} for entity: {2}".format(
-        c.get("alert_type","-"),
+        c.get("alert_type", "-"),
         c.get("network", "-"),
-        c.get("entity",{}).get("name","-")
+        c.get("entity", {}).get("name", "-")
         )

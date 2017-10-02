@@ -5,7 +5,6 @@
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
 import requests
-import json
 import sys
 import datetime
 
@@ -31,19 +30,21 @@ class ZerofoxApi():
         content: JSON
         return: JSON
         """
-        return {'status':status, 'data': content}
+        return {'status': status, 'data': content}
 
     def getApiKey(self):
 
         """
-            Get API key from ZeroFOX with username and password. give Authorization token in future
+            Get API key from ZeroFOX with username and password. give
+                Authorization token in future
             requests by setting config['key']
         """
         req = self.url + "/api-token-auth/"
         data = {'username': self.username,
                 'password': self.password}
         try:
-            resp =  requests.post(req, data=data, proxies=self.proxies, verify=self.verify)
+            resp = requests.post(req, data=data, proxies=self.proxies,
+                                 verify=self.verify)
             if resp.status_code == 200:
                 return self.response("success", resp.json())
             else:
@@ -59,7 +60,8 @@ class ZerofoxApi():
         :return : alerts : dict
         """
 
-        min_timestamp = (datetime.datetime.utcnow() - datetime.timedelta(minutes=since)).isoformat()
+        min_timestamp = (datetime.datetime.utcnow() -
+                         datetime.timedelta(minutes=since)).isoformat()
         param = {
             "status": "open",
             # 'status': "",
@@ -69,8 +71,10 @@ class ZerofoxApi():
         req = self.url + "/alerts/"
 
         try:
-            resp = requests.get(req, headers={'Authorization': 'token {}'.format(self.key)},
-                                    params=param, proxies=self.proxies, verify=self.verify)
+            resp = requests.get(req, headers={'Authorization':
+                                              'token {}'.format(self.key)},
+                                params=param, proxies=self.proxies,
+                                verify=self.verify)
             if resp.status_code == 200:
                 return self.response("success", resp.json())
             else:
@@ -86,8 +90,10 @@ class ZerofoxApi():
         req = self.url + "/alerts/{}/".format(id)
 
         try:
-            resp = requests.get(req, headers={'Authorization': 'token {}'.format(self.key)}, proxies=self.proxies,
-                                    verify=self.verify)
+            resp = requests.get(req, headers={'Authorization':
+                                              'token {}'.format(self.key)},
+                                proxies=self.proxies,
+                                verify=self.verify)
             if resp.status_code == 200:
                 return self.response("success", resp.json())
             else:
@@ -97,19 +103,8 @@ class ZerofoxApi():
 
     def get_image(self, url):
         try:
-            return requests.get(url, headers={'Authorization': 'token {}'.format(self.key)},
-                                    proxies=self.proxies, verify=self.verify)
+            return requests.get(url, headers={'Authorization':
+                                              'token {}'.format(self.key)},
+                                proxies=self.proxies, verify=self.verify)
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
-            
-    # def get_image(self, url):
-    #     """
-    #
-    #     :param url:
-    #     :return: response
-    #     """
-        # try:
-        #     return requests.get(url, proxies=self.proxies,
-        #                             verify=self.verify)
-        # except requests.exceptions.RequestException as e:
-        #     sys.exit("Error: {}".format(e))
