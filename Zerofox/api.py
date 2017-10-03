@@ -27,8 +27,8 @@ class ZerofoxApi():
     def response(self, status, content):
         """
         status: success/failure
-        content: JSON
-        return: JSON
+        content: dict
+        return: dict
         """
         return {'status': status, 'data': content}
 
@@ -52,19 +52,19 @@ class ZerofoxApi():
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
 
-    def find_alerts(self, since):
+    def find_alerts(self, last):
 
         """
-            Get all open alerts sorted by severity, descending
-        :since : number of hours
-        :return : alerts : dict
+        Get all open alerts sorted by severity, descending
+        :last: number of minutes
+        :return: alerts
+        :rtype: dict
         """
 
         min_timestamp = (datetime.datetime.utcnow() -
-                         datetime.timedelta(minutes=since)).isoformat()
+                         datetime.timedelta(minutes=last)).isoformat()
         param = {
             "status": "open",
-            # 'status': "",
             "sort_field": "severity",
             "sort_direction": "desc",
             "min_timestamp": min_timestamp}
@@ -86,6 +86,10 @@ class ZerofoxApi():
 
         """
             Get Alert by Id
+        :param id:
+        :type id: int
+        :return: response()
+        :rtype: dict
         """
         req = self.url + "/alerts/{}/".format(id)
 
@@ -102,6 +106,12 @@ class ZerofoxApi():
             sys.exit("Error: {}".format(e))
 
     def get_image(self, url):
+        """
+        :param url:
+        :type: string
+        :return: response
+        :rtype: requests.response
+        """
         try:
             return requests.get(url, headers={'Authorization':
                                               'token {}'.format(self.key)},

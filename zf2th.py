@@ -36,10 +36,12 @@ class monitoring():
 def add_tags(tags, content):
 
     """
-        add tag to tags
+    add tag to tags
 
-        :param tags is list
-        :param content is list
+    :param tags: existing tags
+    :type tags: list
+    :param content: string, mainly like taxonomy
+    :type content: string
     """
     t = tags
     for newtag in content:
@@ -50,8 +52,12 @@ def add_tags(tags, content):
 def th_severity(sev):
 
     """
-        convert Zerofox severity in TH severity
-        :type sev: string
+    convert DigitalShadows severity in TH severity
+
+    :param sev: ZF severity
+    :type sev: string
+    :return TH severity
+    :rtype: int
     """
 
     severities = {
@@ -72,6 +78,7 @@ def add_alert_artefact(artefacts, dataType, data, tags, tlp):
     :param tags: array
     :param tlp: int
     :return: array
+    :rtype: array
     """
 
     return artefacts.append(AlertArtifact(tags=tags,
@@ -83,6 +90,13 @@ def add_alert_artefact(artefacts, dataType, data, tags, tlp):
 
 
 def init_artefact_tags(content):
+    """
+    param content:
+    type content:
+    return: list of tags
+    rtype: array
+    """
+
     return ["src:ZEROFOX",
             "ZF:Perpetrator",
             "Network:{}".format(content.get('network', 'None'))
@@ -90,6 +104,12 @@ def init_artefact_tags(content):
 
 
 def prepare_artefacts(content):
+    """
+    param content: Zerofox alert
+    type content: dict
+    return: list AlertArtifact
+    rtype: array
+    """
     artifacts = []
     if content.get('perpetrator'):
         perpetrator = content.get('perpetrator')
@@ -145,39 +165,44 @@ def prepare_alert(content, thumbnails):
     """
     convert Zerofox alert in a TheHive Alert
 
-    :return: alert object
+    :param incident: Zerofox Alert
+    :type incident: dict
+    :type thumbnails: dict
+    :return: Thehive alert
+    :rtype: thehive4py.models Alerts
     """
-
-    c = content
+    
     case_tags = ["src:ZEROFOX"]
     case_tags = add_tags(case_tags, [
-        "Type={}".format(c.get("alert_type")),
-        "Network={}".format(c.get("network")),
-        "Entity={}".format(c.get("entity", {}).get("name", "-")),
-        "Id={}".format(c.get('id'))
+        "Type={}".format(content.get("alert_type")),
+        "Network={}".format(content.get("network")),
+        "Entity={}".format(content.get("entity", {}).get("name", "-")),
+        "Id={}".format(content.get('id'))
     ])
 
     alert = Alert(title=th_title(c),
                   tlp=2,
                   tags=case_tags,
-                  severity=th_severity(c.get('severity', "3")),
+                  severity=th_severity(content.get('severity', "3")),
                   description=th_case_description(c, thumbnails),
-                  type='{}'.format(c.get('alert_type')),
+                  type='{}'.format(content.get('alert_type')),
                   source='Zerofox',
                   caseTemplate=TheHive['template'],
-                  sourceRef=str(c.get('id')),
+                  sourceRef=str(content.get('id')),
                   artifacts=prepare_artefacts(content))
+
+    logging.debug("prepare_alert: alert built for \
+        ZF id #{}".format(content.get('id')))
     return alert
 
 
 def create_th_alerts(config, alerts):
     """
-    Convert Zerofox alerts and import them in TheHive Alerts
-    :param config:
-    :param alerts:
-    :type alerts: dict
-    :param response: dict response from Zerofox
-    :rtype: the case created in the alert api of HheHive
+    :param config: TheHive config
+    :type config: dict
+    :param alerts: List of alerts
+    :type alerts: list
+    :return: create TH alert
     """
     thapi = TheHiveApi(config.get('url', None),
                        config.get('key'),
@@ -193,15 +218,21 @@ def create_th_alerts(config, alerts):
 
 
 def get_alerts(zfapi, id_list):
+
     """
-    :return: list of TH Alerts
-    :rtype: list
+    :type zfapi: Zerofox.api.ZerofoxApi
+    :param id_list: list of alert id
+    :type id_list: array
+    :return: TheHive alert
+    :rtype: thehive4py.models Alert
     """
     while id_list:
         id = id_list.pop()
         response = zfapi.get_alerts(id)
         if response.get('status') == "success":
             data = response.get('data').get('alerts')
+            logging.debug('get_alerts(): {} ZF alert(s)\
+                downloaded'.format(data.get('count')))
 
             entity_image_url = data.get('entity', None).get('image', None)
             perpetrator_image_url = data.get('perpetrator', None).get(
@@ -209,17 +240,28 @@ def get_alerts(zfapi, id_list):
             thumbnails = build_thumbnails(zfapi, entity_image_url,
                                           perpetrator_image_url)
             yield prepare_alert(data, thumbnails)
+        else:
+            logging.debug("get_alerts(): Error while \
+                fetching alert #{}: {}".format(id, response.get('data')))
+            sys.exit("get_alerts(): Error while \
+                fetching alert #{}: {}".format(id, response.get('data')))
 
-
-def find_alerts(zfapi, since):
+def find_alerts(zfapi, last):
     """
-    :return: list of TH Alerts
-    :rtype: list
+    :type zfapi: Zerofox.api.ZerofoxApi
+    :param id_list: list of alert id
+    :type id_list: array
+    :return: TheHive alert
+    :rtype: thehive4py.models Alert
     """
-    response = zfapi.find_alerts(since)
+    response = zfapi.find_alerts(last)
     if response.get('status') == "success":
             data = response.get('data').get('alerts')
+            logging.debug('find_alerts(): {} ZF alert(s)\
+                downloaded'.format(data.get('count')))
             for a in data:
+                 logging.debug('find_alerts(): building alert {}\
+                downloaded'.format(a.get('id')))
                 entity_image_url = a.get("entity", None).get("image", None)
                 perpetrator_image_url = a.get('perpetrator', None).get(
                     'image', None)
@@ -227,26 +269,44 @@ def find_alerts(zfapi, since):
                                               perpetrator_image_url)
                 yield prepare_alert(a, thumbnails)
 
-
 def base64_image(content, width):
-        fd = BytesIO(content)
-        image = Image.open(fd)
-        ft = image.format
-        # basewidth = width
-        wpercent = (width / float(image.size[0]))
-        if image.size[0] > width:
-            hsize = int(float(image.size[1]) * float(wpercent))
-            image = image.resize((width, hsize), Image.ANTIALIAS)
-        ImgByteArr = BytesIO()
-        image.save(ImgByteArr, format=ft)
-        ImgByteArr = ImgByteArr.getvalue()
-        with BytesIO(ImgByteArr) as bytes:
-            encoded = base64.b64encode(bytes.read())
-            base64_image = encoded.decode()
-        return base64_image
+    """
+    :param content: raw image
+    :type content: raw
+    :param width: size of the return image
+    :type width: int
+    :return: base64 encoded image
+    :rtype: string
+    """
+    fd = BytesIO(content)
+    image = Image.open(fd)
+    ft = image.format
+    # basewidth = width
+    wpercent = (width / float(image.size[0]))
+    if image.size[0] > width:
+        hsize = int(float(image.size[1]) * float(wpercent))
+        image = image.resize((width, hsize), Image.ANTIALIAS)
+    ImgByteArr = BytesIO()
+    image.save(ImgByteArr, format=ft)
+    ImgByteArr = ImgByteArr.getvalue()
+    with BytesIO(ImgByteArr) as bytes:
+        encoded = base64.b64encode(bytes.read())
+        base64_image = encoded.decode()
+    return base64_image
 
 
 def build_thumbnails(zfapi, entity_image_url, perpetrator_image_url):
+    """
+    :param zfapi:
+    :type zfapi:
+    :param entity_image_url:
+    :type entity_image_url: string
+    :param perpetrator_image_url:
+    :type perpetrator_image_url: string
+    :return: base64 encoded images ready to be added in markdown
+    :rtype: dict
+    """
+
     if entity_image_url is not None:
         resp_entity_image = zfapi.get_image(entity_image_url)
         entity_image = "data:{};base64,{}".format(
@@ -303,7 +363,7 @@ def run():
         alerts = find_alerts(zfapi, last)
         create_th_alerts(TheHive, alerts)
         if args.monitor:
-            mon = monitoring("{}/ds2th.status".format(
+            mon = monitoring("{}/zf2th.status".format(
                 os.path.dirname(os.path.realpath(__file__))))
             mon.touch()
 
@@ -326,14 +386,13 @@ def run():
                               help="Get ZF alerts by ID")
     parser_alert.set_defaults(func=alerts)
     parser_find = subparsers.add_parser('find',
-                                        help="find incidents and \
-                                            intel-incidents in time")
+                                        help="find opened alerts")
     parser_find.add_argument("-l", "--last",
                              metavar="M",
                              nargs=1,
                              type=int,
                              required=True,
-                             help="Get all alerts since last [M] minutes")
+                             help="Get all alerts during last [M] minutes")
     parser_find.add_argument("-m", "--monitor",
                              action='store_true',
                              default=False,
@@ -346,7 +405,7 @@ def run():
     args = parser.parse_args()
 
     if args.debug:
-        logging.basicConfig(filename='{}/ds2th.log'.format(
+        logging.basicConfig(filename='{}/zf2th.log'.format(
                                 os.path.dirname(os.path.realpath(__file__))),
                             level='DEBUG', format='%(asctime)s\
                                                    %(levelname)s\
