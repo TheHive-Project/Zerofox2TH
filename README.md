@@ -86,7 +86,7 @@ optional arguments:
 
 ### Use cases
 
-- Check for new open alerts every 10 minutes (`-l 15` is used to be sure to retrieve all alerts created in the last 10 minutes) :
+- Add a cron job to check for new open alerts every 10 minutes (`-l 15` is used to be sure to retrieve all alerts created in the last 10 minutes) :
 
 ```
 */10    *   *   *   * /path/to/zf2th.py find -l 15
