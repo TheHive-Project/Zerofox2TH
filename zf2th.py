@@ -30,7 +30,7 @@ class monitoring():
         """
 
         if os.path.exists(self.monitoring_file):
-            os.remove(fself.monitoring_fileile)
+            os.remove(self.monitoring_file)
         open(self.monitoring_file, 'a').close()
 
 
@@ -181,11 +181,11 @@ def prepare_alert(content, thumbnails):
         "Id={}".format(content.get('id'))
     ])
 
-    alert = Alert(title=th_title(c),
+    alert = Alert(title=th_title(content),
                   tlp=2,
                   tags=case_tags,
                   severity=th_severity(content.get('severity', "3")),
-                  description=th_case_description(c, thumbnails),
+                  description=th_case_description(content, thumbnails),
                   type='{}'.format(content.get('alert_type')),
                   source='Zerofox',
                   caseTemplate=TheHive['template'],
@@ -259,7 +259,7 @@ def find_alerts(zfapi, last):
     if response.get('status') == "success":
             data = response.get('data').get('alerts')
             logging.debug('find_alerts(): {} ZF alert(s)\
-                downloaded'.format(data.get('count')))
+                downloaded'.format(response.get('data').get('count')))
             for a in data:
                 logging.debug('find_alerts(): building alert {}\
                 downloaded'.format(a.get('id')))
