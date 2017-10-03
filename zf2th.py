@@ -261,7 +261,7 @@ def find_alerts(zfapi, last):
             logging.debug('find_alerts(): {} ZF alert(s)\
                 downloaded'.format(data.get('count')))
             for a in data:
-                 logging.debug('find_alerts(): building alert {}\
+                logging.debug('find_alerts(): building alert {}\
                 downloaded'.format(a.get('id')))
                 entity_image_url = a.get("entity", None).get("image", None)
                 perpetrator_image_url = a.get('perpetrator', None).get(
@@ -339,15 +339,15 @@ def run():
 
     def get_api(args):
         if "password" not in Zerofox:
-            Zerofox['username'] = input("Zerofox Username \
-                                        [%s]: " % getpass.getuser())
+            Zerofox['username'] = input("Zerofox Username"
+                                        "[%s]: " % getpass.getuser())
             Zerofox['password'] = getpass.getpass("Zerofox Password: ")
             zfapi = ZerofoxApi(Zerofox)
             t = zfapi.getApiKey()
             if t.get("status") == "success":
-                print("Token = {}\n \
-                    Add this to your config.py file to \
-                    start requesting alerts".format(t.get("data")['token']))
+                print("Key = {}\n"
+                    "Add this to your config.py file to "
+                    "start requesting alerts".format(t.get("data")['token']))
             sys.exit(0)
         else:
             print(t.get("content"))
@@ -368,12 +368,12 @@ def run():
                 os.path.dirname(os.path.realpath(__file__))))
             mon.touch()
 
-    parser = argparse.ArgumentParser(description="Get ZF \
+    parser = argparse.ArgumentParser(description="Retreive Zerofox \
                                      alerts and create alerts in TheHive")
     parser.add_argument("-d", "--debug",
                         action='store_true',
                         default=False,
-                        help="generate a log file and and active \
+                        help="generate a log file and active \
                               debug logging")
     subparsers = parser.add_subparsers(help="subcommand help")
     parser_api = subparsers.add_parser("api", help="Get your api key")
