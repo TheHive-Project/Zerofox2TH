@@ -2,48 +2,106 @@
 
 Downloads Opened ZeroFOX alerts and creates Alerts into TheHive
 
-- `ZeroFOX/api.py` : main lib to get ZeroFOX alerts
-- `ds2markdown.py` : converting ZeroFOX alert in markdown for TheHive (used in case description and observables)
-- `zf2th.py` : main program, get ZeroFOX alert and create an alert in TheHive containing all information.
+- `ZeroFOX/api.py` : main lib to get ZeroFOX api key and alerts
+- `ds2markdown.py` : converting ZeroFOX alert in markdown for TheHive (used in TheHive alerts)
+- `zf2th.py` : main program, get ZeroFOX alerts and create an alerts into TheHive with description containing all information and observables if any.
 - `config.py.template` : contains all the necessary information to connect to ZeroFOX API and TheHive API. All information is required.
 
 ## Prerequisite
 
 Copy `config.py.template` into `config.py` and fill all connection information needed to connect to ZeroFOX API and TheHive API.
+__Important notice__: running the program a first time is needed to get the API key.
+
 
 ## Usage
 
-- first run, get your Zerofox API token:
-Enter your `Username` and `Password` in the config.py file and :
 
 ```
-./zf2th.py -a
+./zf2th.py -h
+usage: zf2th.py [-h] [-d] {api,alerts,find} ...
+
+Retreive Zerofox alerts and create alerts in TheHive
+
+positional arguments:
+  {api,alerts,find}  subcommand help
+    api              Get your api key
+    alerts           fetch alerts by ID
+    find             find opened alerts
+
+optional arguments:
+  -h, --help         show this help message and exit
+  -d, --debug        generate a log file and active debug logging
 ```
 
-Now update your `config.py` file with the `key`. You can also delete your `Username` and `Password` information.
+- The program comes with 3 main commands:
+    - `api` to get the api key from your login/password
+    - `alerts` to process Zerofox alerts specified by their ID
+    - `find` to find opened Zerofox alerts during last [M] minutes.
+- add `-d` switch to get `debug` information in `zf2th.log file`
 
-- Get alerts opened in last \<time\> minutes :
 
-```
-$ zf2th.py -t  <time>
-```
-
-- Check for new open alerts every 10 minutes (`-t 15` is used to be sure to retrieve all alerts created in the last 10 minutes) :
-
-```
-*/10    *   *   *   * /path/to/zf2th.py -t 15
-```
-
-- Enable logging and add INFO logs :
+### Get the API key
 
 ```
-*/10    *   *   *   * /path/to/zf2th.py -t 15 --log=INFO
+./zf2th.py api
+Zerofox Username[]:
+Zerofox Password:
+
+Key = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+Add this to your config.py file to start requesting alerts
 ```
 
-- Enable logging and add DEBUG logs :
+Now update your `config.py` file with the `key`.
+
+
+### Retreive alerts spedified by ID - use the `alerts` command
+
 
 ```
-*/10    *   *   *   * /path/to/zf2th.py -t 15 --log=DEBUG
+./zf2th.py alerts -h
+usage: zf2th.py alerts [-h] ID [ID ...]
+
+positional arguments:
+  ID          Get ZF alerts by ID
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+
+- `./zf2th.py alerts 123456 234567` : fetch alerts with IDs _123456_ and _234567_.
+
+
+### Retreive alerts opened during last `M` minutes - use the `find` command
+
+```
+./zf2th.py find -h  
+usage: zf2th.py find [-h] -l M [-m]
+
+optional arguments:
+  -h, --help      show this help message and exit
+  -l M, --last M  Get all alerts during last [M] minutes
+  -m, --monitor   active monitoring
+
+```
+
+### Use cases
+
+- Add a cron job to check for new open alerts every 10 minutes (`-l 15` is used to be sure to retrieve all alerts created in the last 10 minutes) :
+
+```
+*/10    *   *   *   * /path/to/zf2th.py find -l 15
+```
+
+- Enable monitoring :
+
+```
+*/10    *   *   *   * /path/to/zf2th.py find -l 15 -m
+```
+
+- Enable logging :
+
+```
+*/10    *   *   *   * /path/to/zf2th.py -d find -l 15
 ```
 
 When enabled, logs are written in the program's folder, in file named `zf2th.log`.
