@@ -2,6 +2,7 @@
 config.py
 test.py
 samples/
+*.status
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

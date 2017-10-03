@@ -5,8 +5,14 @@ Zerofox = {
   },
     'url':'',
     'key':'',
-    'username':'',
-    'password':'',
-    'template':''
-
+    'verify':True
 }
+
+TheHive = {
+    'proxies':{
+      'http': '',
+      'https': ''
+    },
+    'url':'',
+    'key':'',
+    'template': ''
