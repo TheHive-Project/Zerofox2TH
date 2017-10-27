@@ -120,7 +120,7 @@ def th_case_description(c, thumbnails):
 
 
 def th_title(c):
-    return "[Zerofox] {0} in {1} for entity: {2}".format(
+    return "{0} in {1} for entity: {2}".format(
         c.get("alert_type", "-"),
         c.get("network", "-"),
         c.get("entity", {}).get("name", "-")
