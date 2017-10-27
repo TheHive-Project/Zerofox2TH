@@ -64,7 +64,7 @@ class ZerofoxApi():
         min_timestamp = (datetime.datetime.utcnow() -
                          datetime.timedelta(minutes=last)).isoformat()
         param = {
-            "status": "closed",
+            "status": "open",
             "sort_field": "severity",
             "sort_direction": "desc",
             "min_timestamp": min_timestamp}
