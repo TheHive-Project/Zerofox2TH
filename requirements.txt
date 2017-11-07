@@ -1,0 +1,4 @@
+pillow
+thehive4py
+requests
+
