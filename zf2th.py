@@ -53,7 +53,7 @@ def add_tags(tags, content):
 def th_severity(sev):
 
     """
-    convert DigitalShadows severity in TH severity
+    convert ZeroFOX severity in TH severity
 
     :param sev: ZF severity
     :type sev: string
@@ -164,7 +164,7 @@ def prepare_artefacts(content):
 
 def prepare_alert(content, thumbnails):
     """
-    convert Zerofox alert in a TheHive Alert
+    convert a ZeroFOX alert into a TheHive alert
 
     :param incident: Zerofox Alert
     :type incident: dict
@@ -334,20 +334,20 @@ def build_thumbnails(zfapi, entity_image_url, perpetrator_image_url):
 def run():
 
     """
-        Download Zerofox alerts and create a new Case in TheHive
+        Download ZeroFOX alerts and create a new alert in TheHive
     """
 
     def get_api(args):
         if "password" not in Zerofox:
-            Zerofox['username'] = input("Zerofox Username"
+            Zerofox['username'] = input("ZeroFOX username"
                                         "[%s]: " % getpass.getuser())
-            Zerofox['password'] = getpass.getpass("Zerofox Password: ")
+            Zerofox['password'] = getpass.getpass("ZeroFOX password: ")
             zfapi = ZerofoxApi(Zerofox)
             t = zfapi.getApiKey()
             if t.get("status") == "success":
                 print("Key = {}\n"
                     "Add this to your config.py file to "
-                    "start requesting alerts".format(t.get("data")['token']))
+                    "start fetching alerts".format(t.get("data")['token']))
             sys.exit(0)
         else:
             print(t.get("content"))
@@ -368,15 +368,15 @@ def run():
                 os.path.dirname(os.path.realpath(__file__))))
             mon.touch()
 
-    parser = argparse.ArgumentParser(description="Retreive Zerofox \
-                                     alerts and create alerts in TheHive")
+    parser = argparse.ArgumentParser(description="Retrieve ZeroFOX \
+                                     alerts and feed them to TheHive")
     parser.add_argument("-d", "--debug",
                         action='store_true',
                         default=False,
                         help="generate a log file and active \
                               debug logging")
     subparsers = parser.add_subparsers(help="subcommand help")
-    parser_api = subparsers.add_parser("api", help="Get your api key")
+    parser_api = subparsers.add_parser("api", help="get your API key")
     parser_api.set_defaults(func=get_api)
     parser_alert = subparsers.add_parser('alerts', help="fetch alerts by ID")
     parser_alert.add_argument("id",
@@ -384,16 +384,16 @@ def run():
                               action='store',
                               type=int,
                               nargs='+',
-                              help="Get ZF alerts by ID")
+                              help="get ZF alerts by ID")
     parser_alert.set_defaults(func=alerts)
     parser_find = subparsers.add_parser('find',
-                                        help="find opened alerts")
+                                        help="find open alerts")
     parser_find.add_argument("-l", "--last",
                              metavar="M",
                              nargs=1,
                              type=int,
                              required=True,
-                             help="Get all alerts during last [M] minutes")
+                             help="get all alerts published during the last [M] minutes")
     parser_find.add_argument("-m", "--monitor",
                              action='store_true',
                              default=False,
