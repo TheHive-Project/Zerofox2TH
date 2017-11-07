@@ -90,7 +90,7 @@ ZeroFOX username[]:
 ZeroFOX password:
 
 Key = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-Add this to your config.py file to start fetchingsoon alerts
+Add this to your config.py file to start fetching alerts
 ```
 
 Now update your `config.py` file with the `key`.
