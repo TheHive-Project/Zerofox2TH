@@ -19,7 +19,7 @@ Zerofox2TH is written in Python 3 by TheHive Project.
 ## Overview
 Zerofox2TH is made of several parts:
 
-- `ZeroFOX/api.py` : the main library to interact with the ZeroFOX platform 
+- `Zerofox/api.py` : the main library to interact with the ZeroFOX platform 
 and fetch alerts.
 - `zf2markdown.py` : a program which converts Zerofox data
  into Markdown as used by alerts in TheHive.
