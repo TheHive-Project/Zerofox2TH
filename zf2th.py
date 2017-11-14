@@ -231,9 +231,9 @@ def get_alerts(zfapi, id_list):
         id = id_list.pop()
         response = zfapi.get_alerts(id)
         if response.get('status') == "success":
-            data = response.get('data').get('alerts')
+            data = response.get('data').get('alert')
             logging.debug('get_alerts(): {} ZF alert(s)\
-                downloaded'.format(data.get('count')))
+                downloaded'.format(data.get('id')))
 
             entity_image_url = data.get('entity', None).get('image', None)
             perpetrator_image_url = data.get('perpetrator', None).get(
