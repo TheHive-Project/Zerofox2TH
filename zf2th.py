@@ -279,22 +279,26 @@ def base64_image(content, width):
     :return: base64 encoded image
     :rtype: string
     """
-    fd = BytesIO(content)
-    image = Image.open(fd)
-    ft = image.format
-    # basewidth = width
-    wpercent = (width / float(image.size[0]))
-    if image.size[0] > width:
-        hsize = int(float(image.size[1]) * float(wpercent))
-        image = image.resize((width, hsize), Image.ANTIALIAS)
-    ImgByteArr = BytesIO()
-    image.save(ImgByteArr, format=ft)
-    ImgByteArr = ImgByteArr.getvalue()
-    with BytesIO(ImgByteArr) as bytes:
-        encoded = base64.b64encode(bytes.read())
-        base64_image = encoded.decode()
-    return base64_image
+    try:
+        fd = BytesIO(content)
 
+        image = Image.open(fd)
+        ft = image.format
+        # basewidth = width
+        wpercent = (width / float(image.size[0]))
+        if image.size[0] > width:
+            hsize = int(float(image.size[1]) * float(wpercent))
+            image = image.resize((width, hsize), Image.ANTIALIAS)
+        ImgByteArr = BytesIO()
+        image.save(ImgByteArr, format=ft)
+        ImgByteArr = ImgByteArr.getvalue()
+        with BytesIO(ImgByteArr) as bytes:
+            encoded = base64.b64encode(bytes.read())
+            base64_image = encoded.decode()
+        return base64_image
+
+    except Exception as e:
+        return "No image"
 
 def build_thumbnails(zfapi, entity_image_url, perpetrator_image_url):
     """
