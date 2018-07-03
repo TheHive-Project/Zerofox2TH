@@ -66,7 +66,8 @@ def th_severity(sev):
         1: 1,
         2: 1,
         3: 2,
-        4: 3
+        4: 3,
+        5: 3
     }
     return severities[sev]
 
@@ -318,16 +319,16 @@ def build_thumbnails(zfapi, entity_image_url, perpetrator_image_url):
             resp_entity_image.headers['Content-Type'],
             base64_image(resp_entity_image.content, 400))
     else:
-        resp_entity_image = None
         entity_image = "no image"
+
+    perpetrator_image = "no image"
 
     if perpetrator_image_url is not None:
         resp_perpetrator_image = zfapi.get_image(perpetrator_image_url)
-        perpetrator_image = "data:{};base64,{}".format(
-            resp_perpetrator_image.headers['Content-Type'],
-            base64_image(resp_perpetrator_image.content, 400))
-    else:
-        perpetrator_image = "no image"
+        if resp_perpetrator_image is not None:
+            perpetrator_image = "data:{};base64,{}".format(
+                resp_perpetrator_image.headers['Content-Type'],
+                base64_image(resp_perpetrator_image.content, 400))
 
     return {
         "entity_image": entity_image,

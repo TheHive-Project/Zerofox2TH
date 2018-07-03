@@ -113,8 +113,10 @@ class ZerofoxApi():
         :rtype: requests.response
         """
         try:
-            return requests.get(url, headers={'Authorization':
+            resp = requests.get(url, headers={'Authorization':
                                               'token {}'.format(self.key)},
                                 proxies=self.proxies, verify=self.verify)
+            if resp.status_code == 200:
+                return resp
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
