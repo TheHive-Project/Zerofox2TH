@@ -72,10 +72,10 @@ def th_severity(sev):
     return severities[sev]
 
 
-def add_alert_artefact(artefacts, dataType, data, tags, tlp):
+def add_alert_artifact(artifacts, data_type, data, tags, tlp):
     """
-    :param artefacts: array
-    :param dataType: string
+    :param artifacts: array
+    :param data_type: string
     :param data: string
     :param tags: array
     :param tlp: int
@@ -83,15 +83,16 @@ def add_alert_artefact(artefacts, dataType, data, tags, tlp):
     :rtype: array
     """
 
-    return artefacts.append(AlertArtifact(tags=tags,
-                                          dataType=dataType,
-                                          data=data,
-                                          message="From Zerofox",
-                                          tlp=tlp)
-                            )
+    if data is not None:
+        return artifacts.append(AlertArtifact(tags=tags,
+                                              dataType=data_type,
+                                              data=str(data),
+                                              message="From Zerofox",
+                                              tlp=tlp)
+                                )
 
 
-def init_artefact_tags(content):
+def init_artifact_tags(content):
     """
     param content:
     type content:
@@ -105,7 +106,7 @@ def init_artefact_tags(content):
             ]
 
 
-def prepare_artefacts(content):
+def prepare_artifacts(content):
     """
     param content: Zerofox alert
     type content: dict
@@ -115,46 +116,50 @@ def prepare_artefacts(content):
     artifacts = []
     if content.get('perpetrator'):
         perpetrator = content.get('perpetrator')
-        add_alert_artefact(artifacts, 'other', perpetrator.get('display_name',
-                                                               None),
-                           add_tags(init_artefact_tags(content),
-                                    ['{}=\"Display Name\"'.format(
-                                        perpetrator.get('network', None))]),
-                           2)
-        add_alert_artefact(artifacts, 'url', perpetrator.get('url', None),
-                           init_artefact_tags(content),
+        add_alert_artifact(artifacts,
+                           'other',
+                           perpetrator.get('display_name', None),
+                           add_tags(init_artifact_tags(content),
+                                    ['{}=\"Display Name\"'.format(perpetrator.get('network', None))]
+                                    ),
                            2)
 
-        add_alert_artefact(artifacts, 'other',
-                           perpetrator.get('account_number', "None"),
-                           add_tags(init_artefact_tags(content),
-                                    ['{}=\"Account Number\"'.format(
-                                        perpetrator.get('network', 'None'))]),
+        add_alert_artifact(artifacts,
+                           'url', perpetrator.get('url', None),
+                           init_artifact_tags(content),
                            2)
 
-        add_alert_artefact(artifacts, 'other',
-                           '{}'.format(perpetrator.get('id', "None")),
-                           add_tags(init_artefact_tags(content),
-                                    ['{}=\"id\"'.
-                                    format(perpetrator.get('network'))]),
+        add_alert_artifact(artifacts,
+                           'other',
+                           perpetrator.get('account_number', None),
+                           add_tags(init_artifact_tags(content),
+                                    ['{}=\"Account Number\"'.format(perpetrator.get('network', 'None'))]
+                                    ),
+                           2)
+
+        add_alert_artifact(artifacts,
+                           'other',
+                           perpetrator.get('id', None),
+                           add_tags(init_artifact_tags(content),
+                                    ['{}=\"id\"'.format(perpetrator.get('network'))]
+                                    ),
                            2)
         if perpetrator.get('username') != '':
-            add_alert_artefact(artifacts, 'other',
-                               perpetrator.get('username', "None"),
-                               add_tags(init_artefact_tags(content),
-                                        ['{}=\"Username\"'.format(
-                                            perpetrator.get(
-                                                'network', 'None'))]),
+            add_alert_artifact(artifacts,
+                               'other',
+                               perpetrator.get('username', None),
+                               add_tags(init_artifact_tags(content),
+                                        ['{}=\"Username\"'.format(perpetrator.get('network', 'None'))]
+                                        ),
                                2)
         try:
             if json.loads(content.get('metadata')).get('occurrences'):
-                add_alert_artefact(artifacts, 'other', '{}'.format(
+                add_alert_artifact(artifacts, 'other', '{}'.format(
                                      json.loads(content.get('metadata')).get(
                                          'occurrences', 'None')[0].get(
                                              'text', 'None')),
-                                   add_tags(init_artefact_tags(content),
-                                   ['type=\"{}\"'.format(perpetrator.get(
-                                       'type'))]),
+                                   add_tags(init_artifact_tags(content),
+                                            ['type=\"{}\"'.format(perpetrator.get('type'))]),
                                    2)
 
         except json.decoder.JSONDecodeError:
@@ -191,7 +196,7 @@ def prepare_alert(content, thumbnails):
                   source='Zerofox',
                   caseTemplate=TheHive['template'],
                   sourceRef=str(content.get('id')),
-                  artifacts=prepare_artefacts(content))
+                  artifacts=prepare_artifacts(content))
 
     logging.debug("prepare_alert: alert built for \
         ZF id #{}".format(content.get('id')))
@@ -248,6 +253,7 @@ def get_alerts(zfapi, id_list):
             sys.exit("get_alerts(): Error while \
                 fetching alert #{}: {}".format(id, response.get('data')))
 
+
 def find_alerts(zfapi, last):
     """
     :type zfapi: Zerofox.api.ZerofoxApi
@@ -270,6 +276,7 @@ def find_alerts(zfapi, last):
                 thumbnails = build_thumbnails(zfapi, entity_image_url,
                                               perpetrator_image_url)
                 yield prepare_alert(a, thumbnails)
+
 
 def base64_image(content, width):
     """
@@ -300,6 +307,7 @@ def base64_image(content, width):
 
     except Exception as e:
         return "No image"
+
 
 def build_thumbnails(zfapi, entity_image_url, perpetrator_image_url):
     """
