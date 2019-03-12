@@ -335,6 +335,18 @@ def build_thumbnails(zfapi, entity_image_url, perpetrator_image_url):
         "perpetrator_image": perpetrator_image
         }
 
+def get_assets(zfapi, type):
+
+    if type == 'csv':
+        try:
+            response = zfapi.list_entities()
+            r = response.json()
+            print("{};{};{}".format("Name","Email","Asset Type"))
+            for e in r['entities']:
+                print("{};{};{}".format(e['name'], e['email_address'], e['type']['name']))
+        except Exception as e:
+            return e
+
 
 def run():
 
@@ -358,6 +370,9 @@ def run():
             print(t.get("content"))
             sys.exit(1)
 
+
+
+
     def alerts(args):
         zfapi = ZerofoxApi(Zerofox)
         alerts = get_alerts(zfapi, args.id)
@@ -372,6 +387,12 @@ def run():
             mon = monitoring("{}/zf2th.status".format(
                 os.path.dirname(os.path.realpath(__file__))))
             mon.touch()
+
+    def assets(args):
+        type = args.type.pop()
+        zfapi = ZerofoxApi(Zerofox)
+        assets = get_assets(zfapi, type)
+
 
     parser = argparse.ArgumentParser(description="Retrieve ZeroFOX \
                                      alerts and feed them to TheHive")
@@ -404,6 +425,16 @@ def run():
                              default=False,
                              help="active monitoring")
     parser_find.set_defaults(func=find)
+    parser_assets = subparsers.add_parser("assets", help="list all entities registered in Zerofox")
+    parser_assets.add_argument("type",
+                               metavar="TYPE",
+                               action='store',
+                               nargs=1,
+                               type=str,
+                               help="Display the list of entities in TYPE format (CSV)"
+
+    )
+    parser_assets.set_defaults(func=assets)
 
     if len(sys.argv[1:]) == 0:
         parser.print_help()

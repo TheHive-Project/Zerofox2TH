@@ -120,3 +120,17 @@ class ZerofoxApi():
                 return resp
         except requests.exceptions.RequestException as e:
             sys.exit("Error: {}".format(e))
+
+    def list_entities(self):
+        """
+        :return:
+        """
+        try:
+            req = self.url + "/entities/"
+            resp = requests.get(req, headers={'Authorization':
+                                              'token {}'.format(self.key)},
+                                proxies=self.proxies, verify=self.verify)
+            if resp.status_code == 200:
+                return resp
+        except requests.exceptions.RequestException as e:
+            sys.exit("Error: {}".format(e))
