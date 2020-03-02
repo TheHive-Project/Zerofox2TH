@@ -18,13 +18,12 @@ from thehive4py.models import Alert, AlertArtifact
 from zf2markdown import th_title, th_case_description
 
 
-class monitoring():
+class Monitoring:
 
     def __init__(self, file):
         self.monitoring_file = file
 
     def touch(self):
-
         """
         touch status file when successfully terminated
         """
@@ -35,14 +34,13 @@ class monitoring():
 
 
 def add_tags(tags, content):
-
     """
     add tag to tags
 
     :param tags: existing tags
     :type tags: list
     :param content: string, mainly like taxonomy
-    :type content: string
+    :type content: list
     """
     t = tags
     for newtag in content:
@@ -51,7 +49,6 @@ def add_tags(tags, content):
 
 
 def th_severity(sev):
-
     """
     convert ZeroFOX severity in TH severity
 
@@ -155,9 +152,9 @@ def prepare_artifacts(content):
         try:
             if json.loads(content.get('metadata')).get('occurrences'):
                 add_alert_artifact(artifacts, 'other', '{}'.format(
-                                     json.loads(content.get('metadata')).get(
-                                         'occurrences', 'None')[0].get(
-                                             'text', 'None')),
+                    json.loads(content.get('metadata')).get(
+                        'occurrences', 'None')[0].get(
+                        'text', 'None')),
                                    add_tags(init_artifact_tags(content),
                                             ['type=\"{}\"'.format(perpetrator.get('type'))]),
                                    2)
@@ -172,13 +169,13 @@ def prepare_alert(content, thumbnails):
     """
     convert a ZeroFOX alert into a TheHive alert
 
-    :param incident: Zerofox Alert
-    :type incident: dict
+    :param content: Zerofox Alert
+    :type content: dict
     :type thumbnails: dict
     :return: Thehive alert
     :rtype: thehive4py.models Alerts
     """
-    
+
     case_tags = ["src:ZEROFOX"]
     case_tags = add_tags(case_tags, [
         "Type={}".format(content.get("alert_type")),
@@ -225,17 +222,16 @@ def create_th_alerts(config, alerts):
 
 
 def get_alerts(zfapi, id_list):
-
     """
     :type zfapi: Zerofox.api.ZerofoxApi
     :param id_list: list of alert id
-    :type id_list: array
+    :type id_list: list
     :return: TheHive alert
     :rtype: thehive4py.models Alert
     """
     while id_list:
-        id = id_list.pop()
-        response = zfapi.get_alerts(id)
+        alert_id = id_list.pop()
+        response = zfapi.get_alerts(alert_id)
         if response.get('status') == "success":
             data = response.get('data').get('alert')
             logging.debug('get_alerts(): {} ZF alert(s)\
@@ -249,33 +245,33 @@ def get_alerts(zfapi, id_list):
             yield prepare_alert(data, thumbnails)
         else:
             logging.debug("get_alerts(): Error while \
-                fetching alert #{}: {}".format(id, response.get('data')))
+                fetching alert #{}: {}".format(alert_id, response.get('data')))
             sys.exit("get_alerts(): Error while \
-                fetching alert #{}: {}".format(id, response.get('data')))
+                fetching alert #{}: {}".format(alert_id, response.get('data')))
 
 
 def find_alerts(zfapi, last):
     """
     :type zfapi: Zerofox.api.ZerofoxApi
-    :param id_list: list of alert id
-    :type id_list: array
+    :param last: max alert age (in minute)
+    :type last: int
     :return: TheHive alert
     :rtype: thehive4py.models Alert
     """
     response = zfapi.find_alerts(last)
     if response.get('status') == "success":
-            data = response.get('data').get('alerts')
-            logging.debug('find_alerts(): {} ZF alert(s)\
+        data = response.get('data').get('alerts')
+        logging.debug('find_alerts(): {} ZF alert(s)\
                 downloaded'.format(response.get('data').get('count')))
-            for a in data:
-                logging.debug('find_alerts(): building alert {}\
+        for a in data:
+            logging.debug('find_alerts(): building alert {}\
                 downloaded'.format(a.get('id')))
-                entity_image_url = a.get("entity", None).get("image", None)
-                perpetrator_image_url = a.get('perpetrator', None).get(
-                    'image', None)
-                thumbnails = build_thumbnails(zfapi, entity_image_url,
-                                              perpetrator_image_url)
-                yield prepare_alert(a, thumbnails)
+            entity_image_url = a.get("entity", None).get("image", None)
+            perpetrator_image_url = a.get('perpetrator', None).get(
+                'image', None)
+            thumbnails = build_thumbnails(zfapi, entity_image_url,
+                                          perpetrator_image_url)
+            yield prepare_alert(a, thumbnails)
 
 
 def base64_image(content, width):
@@ -297,15 +293,15 @@ def base64_image(content, width):
         if image.size[0] > width:
             hsize = int(float(image.size[1]) * float(wpercent))
             image = image.resize((width, hsize), Image.ANTIALIAS)
-        ImgByteArr = BytesIO()
-        image.save(ImgByteArr, format=ft)
-        ImgByteArr = ImgByteArr.getvalue()
-        with BytesIO(ImgByteArr) as bytes:
-            encoded = base64.b64encode(bytes.read())
-            base64_image = encoded.decode()
-        return base64_image
+        imgbytearr = BytesIO()
+        image.save(imgbytearr, format=ft)
+        imgbytearr = imgbytearr.getvalue()
+        with BytesIO(imgbytearr) as bvalues:
+            encoded = base64.b64encode(bvalues.read())
+            b64_img = encoded.decode()
+        return b64_img
 
-    except Exception as e:
+    except Exception:
         return "No image"
 
 
@@ -341,15 +337,15 @@ def build_thumbnails(zfapi, entity_image_url, perpetrator_image_url):
     return {
         "entity_image": entity_image,
         "perpetrator_image": perpetrator_image
-        }
+    }
 
-def get_assets(zfapi, type):
 
-    if type == 'csv':
+def get_assets(zfapi, tpe):
+    if tpe == 'csv':
         try:
             response = zfapi.list_entities()
             r = response.json()
-            print("{};{};{}".format("Name","Email","Asset Type"))
+            print("{};{};{}".format("Name", "Email", "Asset Type"))
             for e in r['entities']:
                 print("{};{};{}".format(e['name'], e['email_address'], e['type']['name']))
         except Exception as e:
@@ -357,12 +353,11 @@ def get_assets(zfapi, type):
 
 
 def run():
-
     """
         Download ZeroFOX alerts and create a new alert in TheHive
     """
 
-    def get_api(args):
+    def cmd_api(args):
         if "password" not in Zerofox:
             Zerofox['username'] = input("ZeroFOX username"
                                         "[%s]: " % getpass.getuser())
@@ -371,36 +366,32 @@ def run():
             t = zfapi.getApiKey()
             if t.get("status") == "success":
                 print("Key = {}\n"
-                    "Add this to your config.py file to "
-                    "start fetching alerts".format(t.get("data")['token']))
-            sys.exit(0)
-        else:
-            print(t.get("content"))
-            sys.exit(1)
+                      "Add this to your config.py file to "
+                      "start fetching alerts".format(t.get("data")['token']))
+                sys.exit(0)
+            else:
+                print(t.get("content"))
+        sys.exit(1)
 
-
-
-
-    def alerts(args):
+    def cmd_alerts(args):
         zfapi = ZerofoxApi(Zerofox)
         alerts = get_alerts(zfapi, args.id)
         create_th_alerts(TheHive, alerts)
 
-    def find(args):
+    def cmd_find(args):
         last = args.last.pop()
         zfapi = ZerofoxApi(Zerofox)
         alerts = find_alerts(zfapi, last)
         create_th_alerts(TheHive, alerts)
         if args.monitor:
-            mon = monitoring("{}/zf2th.status".format(
+            mon = Monitoring("{}/zf2th.status".format(
                 os.path.dirname(os.path.realpath(__file__))))
             mon.touch()
 
-    def assets(args):
-        type = args.type.pop()
+    def cmd_assets(args):
+        tpe = args.type.pop()
         zfapi = ZerofoxApi(Zerofox)
-        assets = get_assets(zfapi, type)
-
+        get_assets(zfapi, tpe)
 
     parser = argparse.ArgumentParser(description="Retrieve ZeroFOX \
                                      alerts and feed them to TheHive")
@@ -411,7 +402,7 @@ def run():
                               debug logging")
     subparsers = parser.add_subparsers(help="subcommand help")
     parser_api = subparsers.add_parser("api", help="get your API key")
-    parser_api.set_defaults(func=get_api)
+    parser_api.set_defaults(func=cmd_api)
     parser_alert = subparsers.add_parser('alerts', help="fetch alerts by ID")
     parser_alert.add_argument("id",
                               metavar="ID",
@@ -419,7 +410,7 @@ def run():
                               type=int,
                               nargs='+',
                               help="get ZF alerts by ID")
-    parser_alert.set_defaults(func=alerts)
+    parser_alert.set_defaults(func=cmd_alerts)
     parser_find = subparsers.add_parser('find',
                                         help="find open alerts")
     parser_find.add_argument("-l", "--last",
@@ -432,7 +423,7 @@ def run():
                              action='store_true',
                              default=False,
                              help="active monitoring")
-    parser_find.set_defaults(func=find)
+    parser_find.set_defaults(func=cmd_find)
     parser_assets = subparsers.add_parser("assets", help="list all entities registered in Zerofox")
     parser_assets.add_argument("type",
                                metavar="TYPE",
@@ -441,21 +432,21 @@ def run():
                                type=str,
                                help="Display the list of entities in TYPE format (CSV)"
 
-    )
-    parser_assets.set_defaults(func=assets)
+                               )
+    parser_assets.set_defaults(func=cmd_assets)
 
     if len(sys.argv[1:]) == 0:
         parser.print_help()
         parser.exit()
-    args = parser.parse_args()
+    parsed_args = parser.parse_args()
 
-    if args.debug:
+    if parsed_args.debug:
         logging.basicConfig(filename='{}/zf2th.log'.format(
-                                os.path.dirname(os.path.realpath(__file__))),
-                            level='DEBUG', format='%(asctime)s\
+            os.path.dirname(os.path.realpath(__file__))),
+            level='DEBUG', format='%(asctime)s\
                                                    %(levelname)s\
                                                    %(message)s')
-    args.func(args)
+    parsed_args.func(parsed_args)
 
 
 if __name__ == '__main__':
