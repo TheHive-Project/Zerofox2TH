@@ -238,8 +238,11 @@ def get_alerts(zfapi, id_list):
                 downloaded'.format(data.get('id')))
 
             entity_image_url = data.get('entity', None).get('image', None)
-            perpetrator_image_url = data.get('perpetrator', None).get(
-                'image', None)
+            if not entity_image_url:
+                entity_image_url = None
+            perpetrator_image_url = data.get('perpetrator', None).get('image', None)
+            if not perpetrator_image_url:
+                perpetrator_image_url = None
             thumbnails = build_thumbnails(zfapi, entity_image_url,
                                           perpetrator_image_url)
             yield prepare_alert(data, thumbnails)
@@ -267,8 +270,11 @@ def find_alerts(zfapi, last):
             logging.debug('find_alerts(): building alert {}\
                 downloaded'.format(a.get('id')))
             entity_image_url = a.get("entity", None).get("image", None)
-            perpetrator_image_url = a.get('perpetrator', None).get(
-                'image', None)
+            if not entity_image_url:
+                entity_image_url = None
+            perpetrator_image_url = a.get('perpetrator', None).get('image', None)
+            if not perpetrator_image_url:
+                perpetrator_image_url = None
             thumbnails = build_thumbnails(zfapi, entity_image_url,
                                           perpetrator_image_url)
             yield prepare_alert(a, thumbnails)
